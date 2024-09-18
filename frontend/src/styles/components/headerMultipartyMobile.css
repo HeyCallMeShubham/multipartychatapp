@@ -1,0 +1,74 @@
+.header {
+
+    display: none;
+
+}
+
+
+
+@media (min-width:320px) and (max-width:480px) {
+
+
+    .header {
+
+        display: flex;
+
+        background-color: rgb(90, 3, 134);
+
+        justify-content: space-around;
+
+        height: 7rem;
+
+        align-items: center;
+
+        grid-row-start: 1;
+        grid-row-end: 1;
+
+    }
+
+
+    .header .btn {
+
+        color: white;
+
+        font-weight: bold;
+
+        border: none;
+        border-radius: 2rem;
+
+        text-align: center;
+
+        align-items: center;
+
+        background-color: rgb(255, 35, 35);
+
+        height: 3rem;
+
+        width: 5.5rem;
+
+
+
+    }
+
+
+
+
+
+    .header .header-options-container {
+
+        display: flex;
+
+        justify-content: space-around;
+
+        width: 5rem;
+
+        font-size: 2rem;
+
+
+    }
+
+
+
+
+
+}

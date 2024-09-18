@@ -1,0 +1,110 @@
+.father-container {
+
+    height: 100vh;
+    width: 100vw;
+
+    display: grid;
+
+    margin: 0;
+
+    padding: 0;
+
+    grid-template-columns: 1fr;
+
+    grid-template-rows: 1fr;
+
+    color: rgb(201, 201, 201);
+
+
+}
+
+
+.father-container .streams-container {
+
+
+    height: 100%;
+    width: 100%;
+
+    background-color: aqua;
+    display: grid;
+
+    grid-row-start: 1;
+    grid-row-end: 1;
+
+    grid-template-columns: repeat(auto-fit, minmax(10%, auto));
+
+    overflow-y: scroll;
+
+    margin: 0;
+    padding: 0;
+
+
+}
+
+
+
+.father-container .streams-container .stream {
+
+    height: 100%;
+    width: 100%;
+
+    object-fit: fill;
+
+    margin: 0;
+    padding: 0;
+
+}
+
+
+
+@media (min-width:320px) and (max-width:480px) {
+
+
+    .father-container {
+
+        height: 100vh;
+        width: 100vw;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        color: rgb(201, 201, 201);
+
+    }
+
+
+
+    .father-container .streams-container {
+
+        height: 100%;
+
+        width: 100%;
+
+        display: grid;
+
+        grid-row-start: 2;
+        grid-row-end: 2;
+
+        grid-template-columns: 1fr 1fr;
+
+        grid-template-rows: repeat(auto-fit, minmax(25%, 25%));
+
+        overflow-y: scroll;
+
+    }
+
+
+
+    .father-container .streams-container .stream {
+
+        height: 100%;
+        width: 100%;
+
+        object-fit: fill;
+
+        margin: 0;
+        padding: 0;
+    }
+
+
+
+}

@@ -1,0 +1,57 @@
+
+
+.hideWhenInDesktop{
+
+    display: none;
+
+}
+
+
+
+
+
+@media (min-width:320px) and (max-width:480px) {
+
+    .bottomOptionsMainContainerMobile {
+
+        display: block;
+
+    }
+
+
+
+    .bottomOptionsMainContainerMobile {
+
+        background-color: rgb(90, 3, 134);
+
+        height: 7rem;
+
+        width: 100%;
+
+        display: flex;
+
+        align-items: center;
+
+        text-align: center;
+
+        justify-content: space-around;        
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

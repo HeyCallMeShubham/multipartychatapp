@@ -1,0 +1,89 @@
+*,
+*::before,
+*::after {
+
+    margin: 0;
+    padding: 0;
+
+}
+
+
+
+.formContainer {
+
+    height: 100vh;
+    width: 100vw;
+
+
+    align-items: center;
+    text-align: center;
+
+    display: flex;
+    justify-content: center;
+}
+
+
+
+
+.formContainer form {
+    
+    height: 30rem;
+    width: 50rem;
+    
+    gap: 1rem;
+    display: grid;
+    
+    grid-template-columns: auto auto;
+    grid-template-rows: repeat(auto, 1fr);
+    
+    align-items: center;
+    text-align: center;
+    
+    flex-direction: column;
+    justify-content: center;
+    
+    border: solid 2px black;
+    background-color: rgb(90, 3, 134);
+
+
+}
+
+
+
+.formContainer form input {
+
+    height: 4rem;
+    width: 22rem;
+
+    text-align: center;
+    justify-self: center;
+
+    align-items: center;
+    border: solid 2px black;
+
+}
+
+
+
+.formContainer form .confirmPasswordInput {
+
+    height: 4rem;
+    width: 100%;
+
+    text-align: center;
+
+    border: solid 2px black;
+    grid-column: span 2;
+
+}
+
+
+
+.formContainer form button {
+
+    height: 3.5rem;
+    width: 100%;
+    grid-row: 4;
+    grid-column: span 2;
+
+}

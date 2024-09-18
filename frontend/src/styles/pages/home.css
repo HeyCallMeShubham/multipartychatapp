@@ -1,0 +1,237 @@
+.main-home-container {
+
+    width: 100%;
+
+    height: 100%;
+
+    max-height: auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    text-align: center;
+
+    font-size: 2rem;
+
+    font-weight: bold;
+
+
+
+
+
+}
+
+
+
+
+
+.main-home-container .icon {
+
+    width: 100%;
+
+    height: 100%;
+
+
+}
+
+
+
+.main-home-container .roomOption .roomOptionIconContainer {
+
+    width: 3rem;
+
+    height: 3rem;
+
+}
+
+
+.main-home-container ul {
+
+
+    height: 30rem;
+    width: 100%;
+
+
+    align-items: center;
+    text-align: center;
+
+    display: flex;
+    gap: 1rem;
+
+    flex-direction: column;
+    justify-content: center;
+
+
+}
+
+
+
+.main-home-container .roomOption {
+
+
+    background-color: aquamarine;
+
+    width: 28rem;
+
+    height: 4rem;
+
+    text-align: center;
+
+    align-items: center;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    padding: 1rem;
+
+    border-radius: 1rem;
+
+
+}
+
+
+.main-home-container .roomOption:hover {
+
+    width: 29rem;
+
+    height: 4rem;
+    
+    border-radius: 2rem;
+
+}
+
+
+
+
+
+@media (min-width:320px) and (max-width:480px) {
+
+
+    .main-home-container {
+
+        width: 100%;
+
+        height: 100%;
+
+        max-height: auto;
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: center;
+
+        align-items: center;
+
+        text-align: center;
+
+        font-size: 2rem;
+
+        font-weight: bold;
+
+
+    }
+
+
+
+
+
+    .main-home-container .icon {
+
+        width: 100%;
+
+        height: 100%;
+
+
+    }
+
+
+
+    .main-home-container .roomOption .roomOptionIconContainer {
+
+        width: 3rem;
+
+        height: 3rem;
+
+
+    }
+
+
+    .main-home-container ul {
+
+        height: 30rem;
+        width: 100%;
+
+        align-items: center;
+        text-align: center;
+
+        display: flex;
+
+        gap: 1rem;
+
+        flex-direction: column;
+
+        justify-content: center;
+
+
+    }
+
+
+
+    .main-home-container .roomOption {
+
+        background-color: aquamarine;
+
+        width: 20rem;
+
+        height: 4rem;
+
+        text-align: center;
+
+        align-items: center;
+
+        display: flex;
+
+        justify-content: space-between;
+
+        padding: 1rem;
+
+        border-radius: 1rem;
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

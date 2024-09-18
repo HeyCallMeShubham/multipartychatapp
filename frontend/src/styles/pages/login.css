@@ -1,0 +1,49 @@
+
+*,
+*::before,
+*::after {
+
+    margin: 0;
+    padding: 0;
+
+}
+
+
+
+
+.formContainer{
+
+    height: 100vh;
+    width: 100vw;
+
+}
+
+
+.formContainer form{
+
+    display: flex;
+
+
+}
+
+.formContainer form input {
+
+ width: 100%;
+ 
+
+
+}
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
