@@ -13,11 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRoom = void 0;
-const AsyncHandler_1 = __importDefault(require("../../utils/AsyncHandler"));
+const AsyncHandler_1 = __importDefault(require("./../../utils/AsyncHandler"));
 const uuid_1 = require("uuid");
-const RoomModel_1 = __importDefault(require("../../models/RoomModel"));
-const ApiError_1 = __importDefault(require("../../utils/ApiError"));
-const ApiResponse_1 = require("../../utils/ApiResponse");
+const RoomModel_1 = __importDefault(require("./../../models/RoomModel"));
+const ApiError_1 = __importDefault(require("./../../utils/ApiError"));
+const ApiResponse_1 = require("./../../utils/ApiResponse");
 const createRoom = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const roomId = (0, uuid_1.v4)();

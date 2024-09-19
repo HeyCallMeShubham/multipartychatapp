@@ -1,9 +1,9 @@
 
-import asyncHandler from "../../../utils/AsyncHandler";
+import asyncHandler from "./../../utils/AsyncHandler";
 import { v4, parse as parseuuid } from "uuid";
-import MultipartyRoom from "../../../models/RoomModel";
-import ApiError from "../../../utils/ApiError";
-import { ApiResponse } from "../../../utils/ApiResponse";
+import MultipartyRoom from "./../../models/RoomModel";
+import ApiError from "./../../utils/ApiError";
+import { ApiResponse } from "./../../utils/ApiResponse";
 import { NextFunction, Request, Response } from "express";
 
 

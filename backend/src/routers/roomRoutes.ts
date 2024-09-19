@@ -1,6 +1,6 @@
 
 import express, { Router } from "express";
-import { createRoom } from "../controllers/userControllers/roomControllers/createRoom"
+import { createRoom } from "../controllers/roomControllers/createRoom"
 
 
 const roomRouter: Router = Router();

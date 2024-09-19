@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import * as mediasoup from "mediasoup";
 import { types as mediasoupTypes } from "mediasoup";
-import { createRoom } from "./controllers/userControllers/roomControllers/createRoom";
+import { createRoom } from "./controllers//roomControllers/createRoom";
 import ApiError from "./utils/ApiError";
 import { disconnect } from "mongoose";
 import { DtlsParameters, } from "mediasoup/node/lib/types";
@@ -58,7 +58,7 @@ app.use(cors({
     origin: ["http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-
+ 
 }));
 
 
@@ -407,7 +407,6 @@ io.on("connection", (socket: Socket) => {
         informConsumers(producer, roomId, userEmail);
 
         callback({ id: producer.id, roomMembers: roomMembers.length > 1 ? true : false });
-
 
 
     });

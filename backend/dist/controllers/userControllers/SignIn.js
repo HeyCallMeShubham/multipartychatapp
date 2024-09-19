@@ -46,12 +46,12 @@ const SignIn = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0,
         const httpOnlyOptionsforRefreshToken = {
             maxAge: 172800000,
             httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
-            secure: true
+            secure: true,
         };
         const httpOnlyOptionsforAccessToken = {
             maxAge: 54000000,
             httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
-            secure: true
+            secure: true,
         };
         res.cookie("multipartychatrefreshtoken", userRefreshToken, httpOnlyOptionsforRefreshToken);
         res.cookie("multipartychataccesstoken", userAccessToken, httpOnlyOptionsforAccessToken);
