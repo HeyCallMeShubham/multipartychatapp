@@ -4,12 +4,12 @@ class ApiError extends Error {
 
 
     statusCode: number
-    data?: undefined | null
+    data?: any | undefined | null
     success: boolean
     errors: any[]
     stack?: any | undefined
 
-    
+
 
     constructor(statusCode: number, message: string = "something went wrong", errors: any[] = [], stack: any = "") {
 
