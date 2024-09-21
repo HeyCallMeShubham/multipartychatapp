@@ -23,8 +23,6 @@ const ProtectedRoutesWrapper = () => {
 
         if (userAuthError && userAuthError.status === 500) {
 
-            console.log(userAuthError, 'erro')
-
             localStorage.removeItem("persist:mulipartychatroom");
 
             localStorage.clear();
