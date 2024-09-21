@@ -58,9 +58,9 @@ const { Worker, Router, Transport, Producer, Consumer } = mediasoup_1.types;
 const { app, httpsServer, expressServer } = (0, useExpressAndHttpsServer_1.useExpressAppAndHttpsServer)();
 (0, dbConnect_1.connectDb)();
 app.use((0, cors_1.default)({
-    origin: true,
+    origin: ["http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+    credentials: true,
 }));
 app.use(body_parser_1.default.json({ limit: "50mb" }));
 app.use((0, cookie_parser_1.default)());

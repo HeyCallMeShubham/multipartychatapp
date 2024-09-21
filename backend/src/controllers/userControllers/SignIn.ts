@@ -12,7 +12,7 @@ const SignIn = asyncHandler(async (req: Request, res: Response, next: NextFuncti
 
     const { email: clientEmail, password: clientPassword } = req.body
 
-    console.log(req.body, 'req.body')
+
 
     try {
 
@@ -49,7 +49,7 @@ const SignIn = asyncHandler(async (req: Request, res: Response, next: NextFuncti
         };
 
 
-        const httpOnlyOptionsforRefreshToken:httpOptions = {
+        const httpOnlyOptionsforRefreshToken: httpOptions = {
 
             maxAge: 172800000,
             httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
@@ -59,7 +59,7 @@ const SignIn = asyncHandler(async (req: Request, res: Response, next: NextFuncti
         }
 
 
-        const httpOnlyOptionsforAccessToken:httpOptions = {
+        const httpOnlyOptionsforAccessToken: httpOptions = {
 
             maxAge: 54000000,
             httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
@@ -68,10 +68,10 @@ const SignIn = asyncHandler(async (req: Request, res: Response, next: NextFuncti
 
         }
 
- 
+
         res
-        .cookie("multipartychatrefreshtoken", userRefreshToken, httpOnlyOptionsforRefreshToken as any)
-        .cookie("multipartychataccesstoken", userAccessToken, httpOnlyOptionsforAccessToken as any);
+            .cookie(process.env.JWT_REFRESH_COOKIE_NAME as string, userRefreshToken, httpOnlyOptionsforRefreshToken as CookieOptions)
+            .cookie(process.env.JWT_ACCESS_COOKIE_NAME as string, userAccessToken, httpOnlyOptionsforAccessToken as CookieOptions);
 
         const { password, refreshToken, createdAt, updatedAt, ...rest }: any = user._doc
 
@@ -79,9 +79,7 @@ const SignIn = asyncHandler(async (req: Request, res: Response, next: NextFuncti
 
     } catch (error: any) {
 
-
-        throw new ApiError(error.code, error?.message || "something went wrong")
-
+        throw new ApiError(error.code, error?.message || "something went wrong");
 
     }
 

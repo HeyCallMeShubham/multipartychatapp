@@ -73,7 +73,6 @@ app.use(express.static("public"));
 
 
 
-
 cloudinary.config({
 
 
@@ -301,7 +300,6 @@ io.on("connection", (socket: Socket) => {
         callback({ routerRtpCapabilities: router?.rtpCapabilities, url: roomJoinUrl });
 
     });
-
 
 
 

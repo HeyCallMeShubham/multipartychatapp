@@ -24,7 +24,7 @@ const MultipartychatUserSchema = new Schema<IMultipartyChatUser>({
     fullName: { type: String, required: true },
     userName: { type: String, required: true },
     email: { type: String, required: true },
-    profileImage: { type: String},
+    profileImage: { type: String },
     password: { type: String, required: [true, "Password Is Required"] },
     refreshToken: { type: String }
 
@@ -87,49 +87,64 @@ MultipartychatUserSchema.methods.isPasswordCorrect = async function (password: a
 
 
 
-MultipartychatUserSchema.methods.generateAccessToken = function () {
+MultipartychatUserSchema.methods.generateAccessToken = async function () {
 
-    const accessTokenSecretKey: any = process.env.JWT_ACCESS_TOKEN_SECRETKEY;
+    try {
 
-    const accessTokenExpiry: any = process.env.JWT_ACCESS_TOKEN_EXPIRY;
+        const accessTokenSecretKey: any = process.env.JWT_ACCESS_TOKEN_SECRETKEY;
 
-
-
-    return jwt.sign({
-
-        _id: this._id,
-        email: this.email,
-        userName: this.userName,
-        fullName: this.fullName
-
-    }, accessTokenSecretKey, { expiresIn: accessTokenExpiry });
-
-}
+        const accessTokenExpiry: any = process.env.JWT_ACCESS_TOKEN_EXPIRY;
 
 
 
-MultipartychatUserSchema.methods.generateRefreshToken = function () {
+        return await jwt.sign({
+
+            _id: this._id,
+            email: this.email,
+            userName: this.userName,
+            fullName: this.fullName
+
+        }, accessTokenSecretKey, { expiresIn: accessTokenExpiry });
 
 
-    const refreshTokenSecretKey: any = process.env.JWT_REFRESH_TOKEN_SECRETKEY;
+    } catch (err: any) {
 
-    const refreshTokenExpiry: any = process.env.JWT_REFRESH_TOKEN_EXPIRY;
+        console.log(err);
 
-
-
-    return jwt.sign({
-
-        _id: this._id,
-        email: this.email,
-        userName: this.userName,
-        fullName: this.fullName
-
-    }, refreshTokenSecretKey, { expiresIn: refreshTokenExpiry });
-
+    }
 
 }
 
 
+
+MultipartychatUserSchema.methods.generateRefreshToken = async function () {
+
+    try {
+
+        const refreshTokenSecretKey: any = process.env.JWT_REFRESH_TOKEN_SECRETKEY;
+
+        const refreshTokenExpiry: any = process.env.JWT_REFRESH_TOKEN_EXPIRY;
+
+
+
+        return await jwt.sign({
+
+            _id: this._id,
+            email: this.email,
+            userName: this.userName,
+            fullName: this.fullName
+
+        }, refreshTokenSecretKey, { expiresIn: refreshTokenExpiry });
+
+
+
+    } catch (err: any) {
+
+        console.log(err);
+
+    }
+
+}
 
 
 
@@ -139,6 +154,8 @@ MultipartychatUserSchema.post<IMultipartyChatUser>("save", function (doc) {
     // this function or method will run 
 
     console.log("this ran after getting saved in the db", doc, 'documentation');
+
+
 
 });
 

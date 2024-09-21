@@ -65,7 +65,7 @@ const LogIn = () => {
 
             toast.success("account has been created successfully");
 
-            // window.location.href = "/"
+            window.location.href = "/"
 
         } catch (err) {
 
@@ -96,7 +96,7 @@ const LogIn = () => {
 
     if (loginError) {
 
-       return <ErrorBoundary error={loginError} />
+        return <ErrorBoundary error={loginError} />
 
     }
 

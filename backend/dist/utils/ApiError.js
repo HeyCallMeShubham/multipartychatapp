@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class ApiError extends Error {
     constructor(statusCode, message = "something went wrong", errors = [], stack = "") {
         super(message);
-        this.statusCode = statusCode || 500;
+        this.statusCode = statusCode;
         this.message = message;
         this.data = null;
         this.success = false;

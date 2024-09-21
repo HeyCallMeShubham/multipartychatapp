@@ -8,13 +8,13 @@ const generateAccessAndRefreshToken = async (userId: string) => {
 
     try {
 
-        
+
         const user: any = await MultipartychatUserModel.findById(userId);
-        
+        console.log(user, 'user')
 
-        const refreshToken: any = user.generateRefreshToken();
+        const refreshToken: any = await user.generateRefreshToken();
 
-        const accessToken: any = user.generateAccessToken();
+        const accessToken: any = await user.generateAccessToken();
 
         user.refreshToken = refreshToken
 
@@ -26,7 +26,7 @@ const generateAccessAndRefreshToken = async (userId: string) => {
 
         console.log(err);
 
-        throw new ApiError(500, "something went wrong");
+        throw new ApiError(err.code, err.message);
 
     }
 

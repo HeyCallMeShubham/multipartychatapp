@@ -9,7 +9,9 @@ import { ApiResponse } from "../../utils/ApiResponse";
 const CheckUserAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
     try {
-        const refreshToken = req?.cookies.multipartychatrefreshtoken
+        const refreshToken = req.cookies[process.env.JWT_REFRESH_COOKIE_NAME as string]
+
+        console.log(refreshToken, 'refresh')
 
         if (!refreshToken) {
 

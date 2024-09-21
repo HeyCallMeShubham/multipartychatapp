@@ -31,7 +31,6 @@ const generateAccessAndRefreshToken_1 = require("../../utils/generateAccessAndRe
 const ApiResponse_1 = require("../../utils/ApiResponse");
 const SignIn = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { email: clientEmail, password: clientPassword } = req.body;
-    console.log(req.body, 'req.body');
     try {
         const user = yield UserModel_1.default.findOne({ email: clientEmail });
         if (!user) {
@@ -47,14 +46,17 @@ const SignIn = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0,
             maxAge: 172800000,
             httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
             secure: true,
+            sameSite: "None"
         };
         const httpOnlyOptionsforAccessToken = {
             maxAge: 54000000,
             httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
             secure: true,
+            sameSite: "None"
         };
-        res.cookie("multipartychatrefreshtoken", userRefreshToken, httpOnlyOptionsforRefreshToken);
-        res.cookie("multipartychataccesstoken", userAccessToken, httpOnlyOptionsforAccessToken);
+        res
+            .cookie(process.env.JWT_REFRESH_COOKIE_NAME, userRefreshToken, httpOnlyOptionsforRefreshToken)
+            .cookie(process.env.JWT_ACCESS_COOKIE_NAME, userAccessToken, httpOnlyOptionsforAccessToken);
         const _a = user._doc, { password, refreshToken, createdAt, updatedAt } = _a, rest = __rest(_a, ["password", "refreshToken", "createdAt", "updatedAt"]);
         return res.status(200).json(new ApiResponse_1.ApiResponse(201, rest, "Logged In Successfully"));
     }

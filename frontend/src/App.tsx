@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { setSocketStates } from "./features/socketIOSlices/socketIo";
 import socketConnection from "./utils/socketConnection";
 import AdminPanel from "./pages/AdminPanel";
+import ProtectedRoutesWrapper from "./components/ProtectedRoutesWrapper/ProtectedRoutesWrapper";
 
 const App = () => {
 
@@ -28,17 +29,22 @@ const App = () => {
 
       <Routes>
 
-        <Route element={<Header />} >
 
-          <Route index path="/" element={<Home />} />
+        <Route element={<ProtectedRoutesWrapper />}>
+
+
+          <Route element={<Header />} >
+
+            <Route index path="/" element={<Home />} />
+
+          </Route>
+
+          <Route path="/room/v1/:roomId" element={<MultiPartyConversation />} />
+
+          <Route path="/admin/v1/:roomId" element={<AdminPanel />} />
 
         </Route>
 
-        <Route path="/room/v1/:roomId" element={<MultiPartyConversation />} />
-
-        <Route path="/admin/v1/:roomId" element={<AdminPanel />} />
-
-        <Route path="/signup" element={<SignUp />} />
 
         <Route path="/user/v1/signup" element={<SignUp />} />
 

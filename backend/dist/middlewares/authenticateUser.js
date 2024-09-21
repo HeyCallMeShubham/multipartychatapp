@@ -17,21 +17,26 @@ const AsyncHandler_1 = __importDefault(require("../utils/AsyncHandler"));
 const reNewAcessToken_1 = __importDefault(require("../utils/reNewAcessToken"));
 const ApiError_1 = __importDefault(require("../utils/ApiError"));
 const authenticateUser = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const accessToken = req.cookies.multipartyChatAccessToken;
-    if (!accessToken) {
-        yield (0, reNewAcessToken_1.default)(req, res, next);
+    try {
+        const accessToken = req.cookies[process.env.JWT_ACCESS_COOKIE_NAME];
+        if (!accessToken) {
+            yield (0, reNewAcessToken_1.default)(req, res, next);
+        }
+        else {
+            const JWT_SECRETKEY = process.env.JWT_ACCESS_TOKEN_SECRETKEY;
+            jsonwebtoken_1.default.verify(accessToken, JWT_SECRETKEY, (err, user) => {
+                if (err) {
+                    console.log(err);
+                    throw new ApiError_1.default(401, "token used or InValid login again");
+                }
+                else {
+                    req.user = user;
+                    next();
+                }
+            });
+        }
     }
-    else {
-        const JWT_SECRETKEY = process.env.JWT_SECRETKEY;
-        jsonwebtoken_1.default.verify(accessToken, JWT_SECRETKEY, (err, user) => {
-            if (err) {
-                throw new ApiError_1.default(401, "token used or not valid");
-            }
-            else {
-                req.user = user;
-                next();
-            }
-        });
+    catch (error) {
     }
 }));
 exports.default = authenticateUser;

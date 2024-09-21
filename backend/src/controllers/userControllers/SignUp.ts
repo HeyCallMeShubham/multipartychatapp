@@ -69,7 +69,7 @@ const SignUp = asyncHandler(async (req: Request, res: Response, next: NextFuncti
                     
                     res.status(201).json(new ApiResponse(201, createdUser, "user created Successfully"));
 
-                } else {
+                } else { 
 
                     throw new ApiError(500, "Internal server error Couldnt create Account try again later");
 

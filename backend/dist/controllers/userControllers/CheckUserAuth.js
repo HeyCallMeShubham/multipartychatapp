@@ -13,8 +13,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const AsyncHandler_1 = __importDefault(require("../../utils/AsyncHandler"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const ApiError_1 = __importDefault(require("../../utils/ApiError"));
+const ApiResponse_1 = require("../../utils/ApiResponse");
 const CheckUserAuth = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const token = req === null || req === void 0 ? void 0 : req.cookies;
-    console.log(token, 'token');
+    try {
+        const refreshToken = req.cookies[process.env.JWT_REFRESH_COOKIE_NAME];
+        console.log(refreshToken, 'refresh');
+        if (!refreshToken) {
+            throw new ApiError_1.default(404, "no refresh token found either expired or not available please login again");
+        }
+        const refreshTokenSecretKey = process.env.JWT_REFRESH_TOKEN_SECRETKEY;
+        const isTokenVerified = jsonwebtoken_1.default.verify(refreshToken, refreshTokenSecretKey);
+        if (isTokenVerified) {
+            return res.status(200).json(new ApiResponse_1.ApiResponse(200, { isValid: true }, "validToken"));
+        }
+        else {
+            throw new ApiError_1.default(400, "inValidToken");
+        }
+    }
+    catch (err) {
+        throw new ApiError_1.default(err.code, err.message);
+    }
 }));
 exports.default = CheckUserAuth;
