@@ -1,27 +1,18 @@
 import "./App.css";
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import MultiPartyConversation from "./pages/MultiPartyConversation";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import { Routes, Route } from "react-router-dom";
 import SignUp from "./pages/SignUp";
 import LogIn from "./pages/LogIn";
-import { Dispatch } from "redux";
-import { useDispatch } from "react-redux";
-import { setSocketStates } from "./features/socketIOSlices/socketIo";
-import socketConnection from "./utils/socketConnection";
 import AdminPanel from "./pages/AdminPanel";
 import ProtectedRoutesWrapper from "./components/ProtectedRoutesWrapper/ProtectedRoutesWrapper";
+import ActiveUserWrapper from "./components/activeUserWrapper/ActiveUserWrapper";
 
 const App = () => {
 
-
-  const socketIo = useMemo(() => socketConnection(), []);
-
-  const dispatch: Dispatch = useDispatch();
-
-  dispatch(setSocketStates({ prop: 'socket', value: socketIo }));
 
 
   return (
@@ -32,16 +23,22 @@ const App = () => {
 
         <Route element={<ProtectedRoutesWrapper />}>
 
+          <Route element={<ActiveUserWrapper />}>
 
-          <Route element={<Header />} >
+            <Route element={<Header />} >
 
-            <Route index path="/" element={<Home />} />
+              <Route index path="/" element={<Home />} />
+
+            </Route>
+
+
+            <Route path="/room/v1/:roomId" element={<MultiPartyConversation />} />
+
+            <Route path="/admin/v1/:roomId" element={<AdminPanel />} />
+
 
           </Route>
 
-          <Route path="/room/v1/:roomId" element={<MultiPartyConversation />} />
-
-          <Route path="/admin/v1/:roomId" element={<AdminPanel />} />
 
         </Route>
 
@@ -52,7 +49,7 @@ const App = () => {
 
       </Routes>
 
-    </div>
+    </div >
   )
 }
 

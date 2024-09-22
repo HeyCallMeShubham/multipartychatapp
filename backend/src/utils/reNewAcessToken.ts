@@ -24,6 +24,8 @@ const reNewAccessToken = asyncHandler(async (req: iRequest, res: Response, next:
 
         const refreshToken = req.cookies[process.env.JWT_REFRESH_COOKIE_NAME as string]
 
+        console.log(refreshToken, 'refrrr')
+
         if (!refreshToken) {
 
             throw new ApiError(401, "you have no refresh token to access this resource pleae go and login again");

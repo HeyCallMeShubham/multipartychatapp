@@ -16,25 +16,29 @@ const ProtectedRoutesWrapper = () => {
     const [logOutApi] = useLogOutApiMutation();
 
 
-    const logOutApiFunc:Function = useMemo(() => logOutApi, [])
+    const logOutApiFunc: Function = useMemo(() => logOutApi, [])
+
+
+    if (userAuthError) {
+
+        localStorage.removeItem("persist:mulipartychatroom");
+
+
+    }
+
 
 
     useEffect(() => {
 
-        if (userAuthError && userAuthError.status === 500) {
-
-            localStorage.removeItem("persist:mulipartychatroom");
-
-            localStorage.clear();
+        if (!localStorage.getItem("persist:mulipartychatroom")) {
 
             logOutApiFunc();
 
-            window.location.href = "/user/v1/login"
-
         }
 
+    }, [logOutApi,localStorage])
 
-    }, [userAuthError, isLoading]);
+
 
 
 
@@ -45,9 +49,8 @@ const ProtectedRoutesWrapper = () => {
     ///   const currentLoggedInUser = localStorage.getItem("persist:mulipartychatroom");
 
     ///   return currentLoggedInUser ? <Outlet /> : <Navigate to="/user/v1/login" />
+
     ///  }
-
-
 
 
 

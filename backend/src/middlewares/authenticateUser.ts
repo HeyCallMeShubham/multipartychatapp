@@ -25,8 +25,6 @@ const authenticateUser = asyncHandler(async (req: iRequest, res: Response, next:
 
         const accessToken = req.cookies[process.env.JWT_ACCESS_COOKIE_NAME as string]
 
-    
-
         if (!accessToken) {
 
             await reNewAccessToken(req, res, next);
@@ -57,7 +55,9 @@ const authenticateUser = asyncHandler(async (req: iRequest, res: Response, next:
 
         }
 
-    } catch (error) {
+    } catch (error:any) {
+
+        throw new ApiError(error.code, error.message)
 
     }
 

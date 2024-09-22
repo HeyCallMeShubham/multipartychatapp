@@ -16,16 +16,18 @@ const Header = () => {
 
     const [logOutApi, { isSuccess: isLogoutSuccess, data: logoutData, error, isLoading: isLogoutLoading }] = useLogOutApiMutation();
 
+    if (isLogoutSuccess && logoutData && logoutData.success && logoutData.message === "logout successful" && logoutData.data.message === "logout_successful") {
 
+        const currentLoggedInUser = localStorage.removeItem("persist:mulipartychatroom");
+
+        window.location.href = "/user/v1/login"
+
+    }
+    
     useEffect(() => {
+        
+        
 
-        if (isLogoutSuccess && logoutData && logoutData.success && logoutData.message === "logout successful" && logoutData.data.message === "logout_successful") {
-
-            const currentLoggedInUser = localStorage.removeItem("persist:mulipartychatroom");
-
-            window.location.href = "/user/v1/login"
-
-        }
 
     }, [logoutData, isLogoutSuccess]);
 

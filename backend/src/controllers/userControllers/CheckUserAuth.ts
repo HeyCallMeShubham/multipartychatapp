@@ -35,6 +35,8 @@ const CheckUserAuth = asyncHandler(async (req: Request, res: Response, next: Nex
 
     } catch (err: any) {
 
+        console.log(err);
+
         throw new ApiError(err.code, err.message);
 
     }

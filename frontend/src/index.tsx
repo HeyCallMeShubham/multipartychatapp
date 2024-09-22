@@ -17,16 +17,16 @@ const root = ReactDOM.createRoot(
 
 
 root.render(
-  ///<React.StrictMode>
-  <Provider store={store}>
-    <PersistGate persistor={persistor} loading={null}>
-      <BrowserRouter>
-        <App />
-        <Toaster />
-      </BrowserRouter>
-    </PersistGate>
-  </Provider>
-  ///</React.StrictMode>
+  <React.StrictMode>
+    <Provider store={store}>
+      <PersistGate persistor={persistor} loading={null}>
+        <BrowserRouter>
+          <App />
+          <Toaster />
+        </BrowserRouter>
+      </PersistGate>
+    </Provider>
+  </React.StrictMode>
 );
 
 
