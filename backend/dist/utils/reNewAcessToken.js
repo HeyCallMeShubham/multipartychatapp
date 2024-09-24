@@ -19,6 +19,7 @@ const generateAccessAndRefreshToken_1 = require("./generateAccessAndRefreshToken
 const reNewAccessToken = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const refreshToken = req.cookies[process.env.JWT_REFRESH_COOKIE_NAME];
+        console.log(refreshToken, 'refrrr');
         if (!refreshToken) {
             throw new ApiError_1.default(401, "you have no refresh token to access this resource pleae go and login again");
         }
@@ -42,8 +43,8 @@ const reNewAccessToken = (0, AsyncHandler_1.default)((req, res, next) => __await
                         secure: true,
                         sameSite: "None"
                     };
-                    const { userId, userName, email } = userData;
-                    const { accessToken, refreshToken } = yield (0, generateAccessAndRefreshToken_1.generateAccessAndRefreshToken)(userId);
+                    const { _id, userName, email } = userData;
+                    const { accessToken, refreshToken } = yield (0, generateAccessAndRefreshToken_1.generateAccessAndRefreshToken)(_id);
                     res.cookie(process.env.JWT_ACCESS_COOKIE_NAME, accessToken, httpOnlyOptionsforAccessToken);
                     res.cookie(process.env.JWT_REFRESH_COOKIE_NAME, refreshToken, httpOnlyOptionsforRefreshToken);
                     req.user = userData;
@@ -53,6 +54,7 @@ const reNewAccessToken = (0, AsyncHandler_1.default)((req, res, next) => __await
         }
     }
     catch (error) {
+        throw new ApiError_1.default(error.code, error.message);
     }
 }));
 exports.default = reNewAccessToken;

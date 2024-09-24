@@ -14,10 +14,6 @@ import fs from "fs"
 
 const SignUp = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
 
-    console.log(req.body, 'req.body');
-    console.log(req?.file?.path, 'req.file');
-
-
     const {
 
         fullName,

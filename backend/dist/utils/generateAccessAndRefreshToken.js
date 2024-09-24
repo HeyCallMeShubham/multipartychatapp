@@ -18,15 +18,16 @@ const ApiError_1 = __importDefault(require("./ApiError"));
 const generateAccessAndRefreshToken = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield UserModel_1.default.findById(userId);
-        const refreshToken = user.generateRefreshToken();
-        const accessToken = user.generateAccessToken();
+        console.log(user, 'user');
+        const refreshToken = yield user.generateRefreshToken();
+        const accessToken = yield user.generateAccessToken();
         user.refreshToken = refreshToken;
         yield user.save({ validateBeforeSave: false });
         return { refreshToken, accessToken };
     }
     catch (err) {
         console.log(err);
-        throw new ApiError_1.default(500, "something went wrong");
+        throw new ApiError_1.default(err.code, err.message);
     }
 });
 exports.generateAccessAndRefreshToken = generateAccessAndRefreshToken;

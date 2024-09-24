@@ -11,7 +11,7 @@ const CheckUserAuth = asyncHandler(async (req: Request, res: Response, next: Nex
     try {
         const refreshToken = req.cookies[process.env.JWT_REFRESH_COOKIE_NAME as string]
 
-        console.log(refreshToken, 'refresh')
+       
 
         if (!refreshToken) {
 

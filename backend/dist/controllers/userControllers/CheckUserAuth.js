@@ -33,6 +33,7 @@ const CheckUserAuth = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(
         }
     }
     catch (err) {
+        console.log(err);
         throw new ApiError_1.default(err.code, err.message);
     }
 }));

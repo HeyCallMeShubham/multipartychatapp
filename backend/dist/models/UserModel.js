@@ -54,24 +54,38 @@ MultipartychatUserSchema.methods.isPasswordCorrect = function (password) {
     });
 };
 MultipartychatUserSchema.methods.generateAccessToken = function () {
-    const accessTokenSecretKey = process.env.JWT_ACCESS_TOKEN_SECRETKEY;
-    const accessTokenExpiry = process.env.JWT_ACCESS_TOKEN_EXPIRY;
-    return jsonwebtoken_1.default.sign({
-        _id: this._id,
-        email: this.email,
-        userName: this.userName,
-        fullName: this.fullName
-    }, accessTokenSecretKey, { expiresIn: accessTokenExpiry });
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const accessTokenSecretKey = process.env.JWT_ACCESS_TOKEN_SECRETKEY;
+            const accessTokenExpiry = process.env.JWT_ACCESS_TOKEN_EXPIRY;
+            return yield jsonwebtoken_1.default.sign({
+                _id: this._id,
+                email: this.email,
+                userName: this.userName,
+                fullName: this.fullName
+            }, accessTokenSecretKey, { expiresIn: accessTokenExpiry });
+        }
+        catch (err) {
+            console.log(err);
+        }
+    });
 };
 MultipartychatUserSchema.methods.generateRefreshToken = function () {
-    const refreshTokenSecretKey = process.env.JWT_REFRESH_TOKEN_SECRETKEY;
-    const refreshTokenExpiry = process.env.JWT_REFRESH_TOKEN_EXPIRY;
-    return jsonwebtoken_1.default.sign({
-        _id: this._id,
-        email: this.email,
-        userName: this.userName,
-        fullName: this.fullName
-    }, refreshTokenSecretKey, { expiresIn: refreshTokenExpiry });
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const refreshTokenSecretKey = process.env.JWT_REFRESH_TOKEN_SECRETKEY;
+            const refreshTokenExpiry = process.env.JWT_REFRESH_TOKEN_EXPIRY;
+            return yield jsonwebtoken_1.default.sign({
+                _id: this._id,
+                email: this.email,
+                userName: this.userName,
+                fullName: this.fullName
+            }, refreshTokenSecretKey, { expiresIn: refreshTokenExpiry });
+        }
+        catch (err) {
+            console.log(err);
+        }
+    });
 };
 MultipartychatUserSchema.post("save", function (doc) {
     // this post("save") means after getting save in the db

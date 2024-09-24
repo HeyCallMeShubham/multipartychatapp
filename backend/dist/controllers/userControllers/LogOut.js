@@ -15,25 +15,32 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const AsyncHandler_1 = __importDefault(require("../../utils/AsyncHandler"));
 const UserModel_1 = __importDefault(require("../../models/UserModel"));
 const ApiResponse_1 = require("../../utils/ApiResponse");
+const ApiError_1 = __importDefault(require("../../utils/ApiError"));
 const LogOut = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    yield UserModel_1.default.
-        findByIdAndUpdate(req.user._id, { $set: { refreshToken: undefined } }, { new: true });
-    ;
-    const httpOnlyOptionsforRefreshToken = {
-        httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
-        secure: true,
-        sameSite: "None"
-    };
-    const httpOnlyOptionsforAccessToken = {
-        httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
-        secure: true,
-        sameSite: "None"
-    };
-    console.log(process.env.JWT_ACCESS_COOKIE_NAME, process.env.JWT_REFRESH_COOKIE_NAME, "dsewds");
-    res
-        .status(200)
-        .clearCookie(process.env.JWT_ACCESS_COOKIE_NAME, httpOnlyOptionsforAccessToken)
-        .clearCookie(process.env.JWT_REFRESH_COOKIE_NAME, httpOnlyOptionsforRefreshToken)
-        .json(new ApiResponse_1.ApiResponse(200, { message: "logout_successful" }, "logout successful"));
+    try {
+        yield UserModel_1.default.
+            findByIdAndUpdate(req.user._id, { $set: { refreshToken: undefined } }, { new: true });
+        ;
+        const httpOnlyOptionsforRefreshToken = {
+            httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
+            secure: true,
+            sameSite: "None"
+        };
+        const httpOnlyOptionsforAccessToken = {
+            httpOnly: true, //// using this httpOnly attribute will only allow to modify these cookies only through server not from client or browser 
+            secure: true,
+            sameSite: "None"
+        };
+        console.log(process.env.JWT_ACCESS_COOKIE_NAME, process.env.JWT_REFRESH_COOKIE_NAME, "dsewds");
+        res
+            .status(200)
+            .clearCookie(process.env.JWT_ACCESS_COOKIE_NAME, httpOnlyOptionsforAccessToken)
+            .clearCookie(process.env.JWT_REFRESH_COOKIE_NAME, httpOnlyOptionsforRefreshToken)
+            .json(new ApiResponse_1.ApiResponse(200, { message: "logout_successful" }, "logout successful"));
+    }
+    catch (error) {
+        console.log(error);
+        throw new ApiError_1.default(error.code, error.message);
+    }
 }));
 exports.default = LogOut;

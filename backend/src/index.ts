@@ -24,6 +24,7 @@ import ImageModel from "./models/imageModel/ImageModel";
 import { upload } from "./middlewares/multer.middleware";
 import { dotenvConfig } from "./dotenvConfig"
 import { v2 as cloudinary } from "cloudinary"
+import authenticateUser from "./middlewares/authenticateUser";
 
 
 dotenvConfig();
@@ -58,7 +59,7 @@ app.use(cors({
     origin: ["http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
- 
+
 }));
 
 
@@ -193,8 +194,6 @@ const createWorkerFunction = async () => {
 
         });
 
-
-
         return worker;
 
     } catch (err: any) {
@@ -202,8 +201,6 @@ const createWorkerFunction = async () => {
         throw new Error(err.message);
 
     }
-
-
 
 
 }
@@ -220,40 +217,6 @@ const createWorkerFunction = async () => {
 
 
 const io: Server = useSocket();
-
-
-
-const addActiveUser = (socket: Socket, email: string) => {
-
-    try {
-
-        emailToSocket.set(email, socket);
-
-        socketToEmail.set(socket.id, email);
-
-        activeUsers.set(email, {
-
-            email: email,
-            socket: socket,
-            producerId: "",
-            consumerId: "",
-            currentJoinedRoomId: "",
-            producerTransportId: "",
-            consumerTransportId: "",
-
-        });
-
-
-
-    } catch (err: any) {
-
-        console.log(err);
-
-        throw new ApiError(err.message);
-
-    }
-
-}
 
 
 
@@ -275,12 +238,13 @@ io.on("connection", (socket: Socket) => {
 
 
 
-    socket.on("createRoom", async ({ roomId }: { roomId: string }, callback: Function) => {
+    socket.on("createRoom", async ({ roomId }, callback: Function) => {
+
 
         const router: mediasoupTypes.Router | undefined = await createRouter();
 
 
-        const userEmail: string = socketToEmail.get(socket.id);
+        const userEmail: string = socketToEmail.get(socket.id)?.email;
 
 
         activeRooms.set(roomId, {
@@ -299,202 +263,10 @@ io.on("connection", (socket: Socket) => {
 
         callback({ routerRtpCapabilities: router?.rtpCapabilities, url: roomJoinUrl });
 
-    });
-
-
-
-    socket.on('joinRoom', async ({ roomId }: { roomId: string }, callback: Function) => {
-
-        try {
-
-            if (activeRooms.get(roomId).roomMembers.includes(socket.id)) {
-
-                return
-
-            } else {
-
-                const roomData: any = activeRooms.get(roomId);
-
-                const router: mediasoupTypes.Router = roomData?.router;
-
-                const userEmail = socketToEmail.get(socket.id);
-
-                await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
-
-                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }]
-
-                activeRooms.set(roomId, roomData);
-
-                updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
-
-                callback({ routerRtpCapabilities: router?.rtpCapabilities });
-
-            }
-
-
-        } catch (err: any) {
-
-            console.log(err);
-
-            throw new ApiError(err.message);
-
-        }
-
 
     });
 
 
-
-
-    socket.on("createWebRtcTransport", async ({ consumer }: { consumer: boolean }, callback: Function) => {
-
-        const email: string = socketToEmail.get(socket.id)
-
-        const roomId: string = activeUsers.get(email)?.currentJoinedRoomId;
-
-        const router: mediasoupTypes.Router = activeRooms.get(roomId)?.router;
-
-
-
-        if (consumer) {
-
-            const transport = await createWebRtcTransport(router, callback);
-
-            addConsumerTransport(transport, roomId, email);
-
-        } else {
-
-            const transport = await createWebRtcTransport(router, callback);
-
-            addProducerTransport(transport, roomId, email)
-
-        }
-
-
-    });
-
-
-
-
-    socket.on("transport-connect", async ({ dtlsParameters, serverProducerTransportId }: { dtlsParameters: DtlsParameters, serverProducerTransportId: string }) => {
-
-        const { transport } = transports.get(serverProducerTransportId);
-
-        await transport.connect({ dtlsParameters });
-
-    });
-
-
-
-
-
-    socket.on("transport-produce", async ({ kind, rtpParameters, serverProducerTransportId, roomId }: any, callback: Function) => {
-
-
-
-        const { transport } = transports.get(serverProducerTransportId);
-
-        const producer: mediasoupTypes.Producer = await transport.produce({ kind, rtpParameters });
-
-        const roomMembers = activeRooms.get(roomId).roomMembers;
-
-        const userEmail: string = socketToEmail.get(socket.id);
-
-        addProducer(producer, roomId, userEmail);
-
-        informConsumers(producer, roomId, userEmail);
-
-        callback({ id: producer.id, roomMembers: roomMembers.length > 1 ? true : false });
-
-
-    });
-
-
-
-    socket.on("transport-recv-connect", async ({ dtlsParameters, serverConsumerTransportId }: { dtlsParameters: DtlsParameters, serverConsumerTransportId: string }) => {
-
-        const { transport } = transports.get(serverConsumerTransportId);
-
-        await transport.connect({ dtlsParameters });
-
-    });
-
-
-
-    socket.on("getProducers", (callback: Function) => {
-
-
-        const userEmail: string = socketToEmail.get(socket.id);
-
-        const producersList: any = getProducers(userEmail);
-
-
-        callback({ producersList });
-
-    });
-
-
-
-    socket.on("consume", async ({ rtpCapabilities, producerId, serverConsumerTransportId }, callback: Function) => {
-
-        const roomId: string = activeUsers.get(socket.id).currentJoinedRoomId;
-
-        const router = activeRooms.get(roomId).router
-
-
-        if (router.canConsume({
-
-            rtpCapabilities,
-            producerId,
-            paused: true
-
-        })) {
-
-
-            const consumerTransport = transports.get(serverConsumerTransportId).transport;
-
-
-            const consumer = await consumerTransport.consume({
-
-                rtpCapabilities,
-                producerId,
-                paused: true
-
-            });
-
-
-            addConsumer(consumer, roomId, socket.id);
-
-
-            callback({
-
-                params: {
-
-                    id: consumer.id,
-                    rtpParameters: consumer.rtpParameters,
-                    producerId,
-                    kind: consumer.kind,
-
-                }
-
-            });
-
-        }
-
-    });
-
-
-
-
-
-    socket.on("consumer-resume", ({ consumerId }: any) => {
-
-        const consumer = consumers.get(consumerId).consumer;
-
-        consumer.resume();
-
-
-    });
 
 
 
@@ -502,12 +274,13 @@ io.on("connection", (socket: Socket) => {
 
         console.log(socket.id, 'disconnect');
 
+        const disconnectedUserEmail = socketToEmail.get(socket?.id);
 
-        const disconnectedUserEmail = socketToEmail.get(socket.id);
+        emailToSocket.delete(disconnectedUserEmail?.email);
 
-        emailToSocket.delete(disconnectedUserEmail);
+        activeUsers.delete(disconnectedUserEmail?.email);
 
-        activeUsers.delete(disconnectedUserEmail);
+        socketToEmail.delete(socket.id);
 
         sockets.delete(socket.id);
 
@@ -516,6 +289,74 @@ io.on("connection", (socket: Socket) => {
 
 
 });
+
+
+
+
+
+
+
+const addActiveUser = (socket: Socket, email: string) => {
+
+
+    try {
+
+        if (emailToSocket.get(email)) {
+
+            const previousSocketObj: any = emailToSocket.get(email)
+
+            const activeUserObj = activeUsers.get(email);
+
+            previousSocketObj.socket = socket
+
+            activeUserObj.email = email
+            activeUserObj.socket = socket
+
+
+
+            socketToEmail.set(socket.id, socketToEmail.get(previousSocketObj.socket.id));
+
+            emailToSocket.set(email, previousSocketObj);
+
+            activeUsers.set(email, activeUserObj);
+
+            socketToEmail.delete(previousSocketObj?.socket?.id);
+
+
+
+        }
+
+
+
+        socketToEmail.set(socket.id, { email: email });
+
+        emailToSocket.set(email, { socket: socket });
+
+
+        activeUsers.set(email, {
+
+            email: email,
+            socket: socket,
+            producerId: "",
+            consumerId: "",
+            currentJoinedRoomId: "",
+            producerTransportId: "",
+            consumerTransportId: "",
+
+        });
+
+
+
+    } catch (err: any) {
+
+        console.log(err);
+
+        throw new ApiError(err.code, err.message);
+
+    }
+
+
+}
 
 
 
@@ -530,280 +371,6 @@ const createRouter = async (): Promise<mediasoupTypes.Router | undefined> => {
 }
 
 
-
-
-
-const createWebRtcTransport = async (router: mediasoupTypes.Router, callback: Function): Promise<mediasoupTypes.Transport> => {
-
-    try {
-
-
-        const transportOptions: mediasoupTypes.WebRtcTransportOptions = {
-
-            listenInfos: [{
-
-                protocol: "udp",
-                ip: "0.0.0.0",
-                announcedAddress: "192.168.1.5"
-
-            }],
-
-            enableUdp: true,
-            enableTcp: true,
-            preferUdp: true,
-            preferTcp: true,
-
-        }
-
-
-        const transport: mediasoupTypes.WebRtcTransport = await router?.createWebRtcTransport(transportOptions);
-
-
-
-        callback({
-
-
-            params: {
-
-                id: transport?.id,
-                iceParameters: transport?.iceParameters,
-                iceCandidates: transport?.iceCandidates,
-                dtlsParameters: transport?.dtlsParameters,
-                sctpParameters: transport?.sctpParameters
-
-            }
-
-        });
-
-        return transport
-
-    } catch (err: any) {
-
-        console.log(err);
-
-        throw new ApiError(err.message);
-
-    }
-
-}
-
-
-
-
-
-
-const getProducers = (userEmail: string) => {
-
-    try {
-
-        const userData = activeUsers.get(userEmail);
-
-        const roomId = userData.currentJoinedRoomId;
-
-        const producersOfRoom: any = roomProducers.get(roomId);
-
-        let producersList: any = []
-
-        producersOfRoom.forEach((producerData: any) => {
-
-            if (producerData.email !== userEmail) {
-
-                producersList = [...producersList, producerData.producerId];
-
-            }
-
-        });
-
-
-
-        return producersList
-
-    } catch (err: any) {
-
-        console.log(err);
-
-    }
-
-}
-
-
-
-
-
-
-
-const addProducerTransport = async (transport: mediasoupTypes.Transport, roomId: string, email: string) => {
-
-    try {
-
-
-        transports.set(transport.id, {
-
-            transport,
-            email,
-            roomId
-
-        });
-
-
-        updateActiveUserPropState(email, "producerTransportId", transport.id);
-
-
-    } catch (err: any) {
-
-        console.log(err)
-
-        throw new ApiError(err.message);
-
-    }
-
-}
-
-
-
-
-
-
-
-const addConsumerTransport = async (transport: mediasoupTypes.Transport, roomId: string, email: string) => {
-
-    try {
-
-        transports.set(transport.id, {
-
-            transport,
-            email,
-            roomId
-
-        });
-
-
-        updateActiveUserPropState(email, "consumerTransportId", transport.id);
-
-
-    } catch (err: any) {
-
-        console.log(err);
-
-        throw new ApiError(err.message);
-
-    }
-
-}
-
-
-
-const addProducer = async (producer: mediasoupTypes.Producer, roomId: string, email: string) => {
-
-    try {
-
-        producers.set(producer.id, {
-
-            producer,
-            email
-
-        });
-
-
-        if (roomProducers.has(roomId)) {
-
-            const producersOfRoom: any = roomProducers.get(roomId);
-
-            roomProducers.set(roomId, [...producersOfRoom, { producerId: producer.id, email }]);
-
-        } else {
-
-            roomProducers.set(roomId, [{ producerId: producer.id, email, }]);
-
-        }
-
-
-        updateActiveUserPropState(email, "producerId", producer.id);
-
-
-
-    } catch (err) {
-
-        console.log(err);
-
-    }
-
-}
-
-
-
-
-const addConsumer = async (consumer: mediasoupTypes.Consumer, roomId: string, email: string) => {
-
-    try {
-
-        consumers.set(consumer.id, {
-
-            consumer,
-            email
-
-        });
-
-
-        updateActiveUserPropState(email, "consumerId", consumer.id);
-
-
-    } catch (err) {
-
-        console.log(err);
-
-    }
-
-}
-
-
-
-
-
-
-
-
-
-
-const informConsumers = (producer: mediasoupTypes.Producer, roomId: string, currentUserEmail: string) => {
-
-    const roomMembers = activeRooms.get(roomId).roomMembers;
-
-
-    const emails = roomMembers.filter((roomMember: { email: string }) => roomMember.email !== currentUserEmail);
-
-    emails.forEach((email: string) => {
-
-        console.log(email, "email");
-
-        const socket = activeUsers.get(email).socket
-
-        socket.emit("new-producer", { producerId: producer.id })
-
-    });
-
-
-
-}
-
-
-
-
-
-
-const getUser = async () => {
-
-    try {
-
-
-
-
-    } catch (err: any) {
-
-        console.log(err);
-
-    }
-}
 
 
 
@@ -838,17 +405,6 @@ const updateActiveUserPropState = (email: string, prop: string, value: any) => {
     }
 
 }
-
-
-
-
-const removeFromRoom = () => {
-
-
-
-}
-
-
 
 
 

@@ -37,6 +37,7 @@ const authenticateUser = (0, AsyncHandler_1.default)((req, res, next) => __await
         }
     }
     catch (error) {
+        throw new ApiError_1.default(error.code, error.message);
     }
 }));
 exports.default = authenticateUser;
