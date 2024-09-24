@@ -10,6 +10,8 @@ import { redirect, useNavigate } from 'react-router-dom';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { setMediaSoupState } from '../features/mediasoupSlice';
+import { useCreateRoomApiMutation } from '../features/rtkQuerySlices/CreateRoom';
+import ErrorBoundary from '../errors/errorHandlers/ErrorBoundary';
 
 
 
@@ -24,42 +26,43 @@ const Home = () => {
 
 
 
-  const createRoom = async () => {
+  const [createRoomApi, { isSuccess, data, isLoading, isError, error }]:any = useCreateRoomApiMutation();
 
-    try {
 
-      const { data } = await axios.post("https://localhost:4300/api/v1/room/create-room", {
 
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
+
+
+  useEffect(() => {
+
+    if (isSuccess && data && data?.success && data?.code < 400) {
+
+
+      const { url, roomId }: { url: string, roomId: string } = data.data
+
+      socketIo?.emit("createRoom", { roomId: roomId }, ({ routerRtpCapabilities, url }: { routerRtpCapabilities: string, url: string }) => {
+
+        dispatch(setMediaSoupState({ prop: "routerRtpCapabilities", value: routerRtpCapabilities }))
+
+        redirect(url);
 
       });
 
+    }
+
+  }, [data, isLoading]);
 
 
-      if (data.success && data.code < 400) {
 
-        const { url, roomId }: { url: string, roomId: string } = data.data
 
-        socketIo?.emit("createRoom", { roomId: roomId }, ({ routerRtpCapabilities, url }: { routerRtpCapabilities: string, url: string }) => {
+  useEffect(() => {
 
-          dispatch(setMediaSoupState({ prop: "routerRtpCapabilities", value: routerRtpCapabilities }))
+    if (isError && error) {
 
-          redirect(url);
-
-        });
-
-      }
-
-    } catch (err: any) {
-
-      console.log(err);
+    alert(error?.data?.message);
 
     }
 
-  }
+  }, [isError, error]);
 
 
 
@@ -85,8 +88,8 @@ const Home = () => {
 
 
 
-        <li className="roomOption hostRoom" onClick={createRoom}>
-          host room
+        <li className="roomOption hostRoom" onClick={createRoomApi}>
+          {isLoading ? "......creating room" : "host room"}
           <span className='roomOptionIconContainer' >
             <GrHost className="icon" /> </span>
         </li>

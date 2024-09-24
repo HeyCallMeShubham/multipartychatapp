@@ -240,12 +240,9 @@ io.on("connection", (socket: Socket) => {
 
     socket.on("createRoom", async ({ roomId }, callback: Function) => {
 
-
         const router: mediasoupTypes.Router | undefined = await createRouter();
 
-
         const userEmail: string = socketToEmail.get(socket.id)?.email;
-
 
         activeRooms.set(roomId, {
 
@@ -253,7 +250,6 @@ io.on("connection", (socket: Socket) => {
             roomMembers: [{ email: userEmail }], /// later we will replace socket.id with email 
 
         });
-
 
         await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
 
@@ -265,6 +261,61 @@ io.on("connection", (socket: Socket) => {
 
 
     });
+
+
+
+
+    socket.on('joinRoom', async ({ roomId }: { roomId: string }, callback: Function) => {
+
+        try {
+
+            if (activeRooms.get(roomId).roomMembers.includes(socket.id)) {
+
+                return
+
+            } else {
+
+                const roomData: any = activeRooms.get(roomId);
+
+                const router: mediasoupTypes.Router = roomData?.router;
+
+                const userEmail = socketToEmail.get(socket.id).email;
+
+                await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
+
+                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }]
+
+                activeRooms.set(roomId, roomData);
+
+                updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
+
+                callback({ routerRtpCapabilities: router?.rtpCapabilities });
+
+            }
+
+
+        } catch (err: any) {
+
+            console.log(err);
+
+            throw new ApiError(err.code, err.message);
+
+        }
+
+
+    });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -313,7 +364,6 @@ const addActiveUser = (socket: Socket, email: string) => {
             activeUserObj.socket = socket
 
 
-
             socketToEmail.set(socket.id, socketToEmail.get(previousSocketObj.socket.id));
 
             emailToSocket.set(email, previousSocketObj);
@@ -321,7 +371,6 @@ const addActiveUser = (socket: Socket, email: string) => {
             activeUsers.set(email, activeUserObj);
 
             socketToEmail.delete(previousSocketObj?.socket?.id);
-
 
 
         }

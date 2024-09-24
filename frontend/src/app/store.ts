@@ -11,6 +11,7 @@ import { Persistor } from "redux-persist/lib/types";
 import userSlice from "../features/userSlices/userSlice";
 import { checkUserAuthenticationApi } from "../features/rtkQuerySlices/checkUserValidationSlice";
 import { logOutUserAPi } from "../features/rtkQuerySlices/LogOutUserSlice";
+import { createRoomApi } from "../features/rtkQuerySlices/CreateRoom";
 
 
 
@@ -28,10 +29,12 @@ const persistConfig: iPersistConfig = {
 
     key: "mulipartychatroom",
     version: 1,
-    blacklist: ["socket", SignInApiSlice.reducerPath, SignUpApiSlice.reducerPath, checkUserAuthenticationApi.reducerPath],
+    blacklist: ["socket", SignInApiSlice.reducerPath, SignUpApiSlice.reducerPath, checkUserAuthenticationApi.reducerPath, createRoomApi.reducerPath],
     storage
 
 }
+
+
 
 
 
@@ -47,7 +50,8 @@ const rootReducer: Reducer = combineReducers({
     [SignUpApiSlice.reducerPath]: SignUpApiSlice.reducer,
     [SignInApiSlice.reducerPath]: SignInApiSlice.reducer,
     [checkUserAuthenticationApi.reducerPath]: checkUserAuthenticationApi.reducer,
-    [logOutUserAPi.reducerPath]: logOutUserAPi.reducer
+    [logOutUserAPi.reducerPath]: logOutUserAPi.reducer,
+    [createRoomApi.reducerPath]: createRoomApi.reducer
 
 
 
@@ -78,6 +82,7 @@ export const store: EnhancedStore = configureStore({
         SignInApiSlice.middleware,
         checkUserAuthenticationApi.middleware,
         logOutUserAPi.middleware,
+        createRoomApi.middleware,
 
 
     )
