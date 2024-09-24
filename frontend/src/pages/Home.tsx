@@ -26,7 +26,10 @@ const Home = () => {
 
 
 
+
+
   const [createRoomApi, { isSuccess, data, isLoading, isError, error }]:any = useCreateRoomApiMutation();
+
 
 
 
@@ -34,8 +37,8 @@ const Home = () => {
 
   useEffect(() => {
 
-    if (isSuccess && data && data?.success && data?.code < 400) {
 
+    if (isSuccess && data && data?.success && data?.code < 400) {
 
       const { url, roomId }: { url: string, roomId: string } = data.data
 
@@ -49,7 +52,10 @@ const Home = () => {
 
     }
 
+
   }, [data, isLoading]);
+
+
 
 
 

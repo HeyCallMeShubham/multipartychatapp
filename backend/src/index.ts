@@ -17,7 +17,7 @@ import { types as mediasoupTypes } from "mediasoup";
 import { createRoom } from "./controllers//roomControllers/createRoom";
 import ApiError from "./utils/ApiError";
 import { disconnect } from "mongoose";
-import { DtlsParameters, } from "mediasoup/node/lib/types";
+import { DtlsParameters, Router, Transport, WebRtcTransportOptions, } from "mediasoup/node/lib/types";
 import MultipartyRoom from "./models/RoomModel"
 import multer from "multer"
 import ImageModel from "./models/imageModel/ImageModel";
@@ -25,6 +25,8 @@ import { upload } from "./middlewares/multer.middleware";
 import { dotenvConfig } from "./dotenvConfig"
 import { v2 as cloudinary } from "cloudinary"
 import authenticateUser from "./middlewares/authenticateUser";
+import { DtlsParameters } from "mediasoup/node/lib/fbs/web-rtc-transport";
+import { emit } from "nodemon";
 
 
 dotenvConfig();
@@ -251,7 +253,13 @@ io.on("connection", (socket: Socket) => {
 
         });
 
+
+
+
+
         await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
+
+
 
         updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
 
@@ -261,6 +269,8 @@ io.on("connection", (socket: Socket) => {
 
 
     });
+
+
 
 
 
@@ -277,13 +287,15 @@ io.on("connection", (socket: Socket) => {
 
                 const roomData: any = activeRooms.get(roomId);
 
+                if (!roomData) throw new ApiError(404, "no room with this id found");
+
                 const router: mediasoupTypes.Router = roomData?.router;
 
                 const userEmail = socketToEmail.get(socket.id).email;
 
                 await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
 
-                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }]
+                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }];
 
                 activeRooms.set(roomId, roomData);
 
@@ -308,9 +320,35 @@ io.on("connection", (socket: Socket) => {
 
 
 
+    socket.on("createWebRtcTransport", async ({ consumer }: { consumer: boolean }, callback: Function) => {
 
+        const router: Router = findRoomRouter(socket.id);
 
+        try {
 
+            if (consumer) {
+
+                const consumerTransport: mediasoupTypes.WebRtcTransport | any = await createWebRtcTransport(router, callback);
+
+                addConsumerTransport(consumerTransport, socket.id)
+
+            } else {
+
+                const producerTransport: mediasoupTypes.WebRtcTransport | any = await createWebRtcTransport(router, callback);
+
+                addProducerTransport(producerTransport, socket.id)
+
+            }
+
+        } catch (err: any) {
+
+            console.log(err);
+
+            throw new ApiError(err.code, err.message)
+
+        }
+
+    });
 
 
 
@@ -376,7 +414,6 @@ const addActiveUser = (socket: Socket, email: string) => {
         }
 
 
-
         socketToEmail.set(socket.id, { email: email });
 
         emailToSocket.set(email, { socket: socket });
@@ -423,37 +460,162 @@ const createRouter = async (): Promise<mediasoupTypes.Router | undefined> => {
 
 
 
+const createWebRtcTransport = async (router: Router, callback: Function) => {
+
+    try {
+
+        const webRtcTransportOptions: WebRtcTransportOptions = {
+
+            listenInfos: [{
+
+                protocol: "udp",
+                ip: "0.0.0.0",
+                announcedAddress: ""
+
+            }],
+
+            enableUdp: true,
+            enableTcp: true,
+            preferUdp: true,
+            preferTcp: true,
+
+
+        }
+
+        const transport: mediasoupTypes.WebRtcTransport = await router?.createWebRtcTransport(webRtcTransportOptions);
+
+        callback({
+
+            params: {
+
+                id: transport?.id,
+                iceParameters: transport?.iceParameters,
+                iceCandidates: transport?.iceCandidates,
+                dtlsParameters: transport?.dtlsParameters,
+
+            }
+
+        });
+
+
+
+        return transport
+
+    } catch (err: any) {
+
+
+    }
+
+
+}
+
+const findRoomRouter = (socketId: string) => {
+
+    // this function will get the router of the room that user have joined and return it
+
+    try {
+
+        const userEmail = socketToEmail.get(socketId)?.email
+
+        const roomName = activeUsers.get(userEmail).currentJoinedRoomId;
+
+        if (!roomName) throw new ApiError(401, "the room your trying to join either closed or do not exist, cannot proceed further");
+
+        const { router } = activeRooms.get(roomName);
+
+        return router
+
+    } catch (err: any) {
+
+        console.log(err);
+
+        throw new ApiError(err.code, err.message);
+
+    }
+
+}
+
 
 
 
 
 const updateActiveUserPropState = (email: string, prop: string, value: any) => {
 
-
-
     try {
 
         const userData = activeUsers.get(email);
-
-        console.log(userData, 'userDta')
 
         userData[prop] = value;
 
         activeUsers.set(email, userData);
 
-        console.log(activeUsers.get(email), 'activeUser');
 
     } catch (err: any) {
 
         console.log(err);
 
-        throw new ApiError(err.message);
+        throw new ApiError(err.code, err.message);
 
 
 
     }
 
 }
+
+
+
+
+
+
+
+const addProducerTransport = (transport: mediasoupTypes.WebRtcTransport, socketId: string) => {
+
+    transports.set(transport.id, {
+        transport,
+    });
+
+    const userEmail = socketToEmail.get(socketId).email
+
+    const userData = activeUsers.get(userEmail);
+
+    userData.producerTransport = transport;
+
+    activeUsers.set(userEmail, userData);
+
+    producers.set(transport.id, transport);
+
+}
+
+
+
+
+
+const addConsumerTransport = (transport: mediasoupTypes.WebRtcTransport, socketId: string) => {
+
+    transports.set(transport.id, {
+        transport,
+    });
+
+    const userEmail = socketToEmail.get(socketId).email;
+
+    const userData = activeUsers.get(userEmail);
+
+    userData.consumerTransport = transport;
+
+    activeUsers.set(userEmail, userData);
+
+    consumers.set(transport.id, transport);
+
+}
+
+
+
+
+
+
+
+
+
 
 
 
