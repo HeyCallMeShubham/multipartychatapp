@@ -19,12 +19,10 @@ const ApiResponse_1 = require("../../utils/ApiResponse");
 const index_1 = require("../../index");
 const fs_1 = __importDefault(require("fs"));
 const SignUp = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    console.log(req.body, 'req.body');
-    console.log((_a = req === null || req === void 0 ? void 0 : req.file) === null || _a === void 0 ? void 0 : _a.path, 'req.file');
+    var _a;
     const { fullName, userName, email, password, profileImage } = req.body;
     try {
-        const localFilePath = (_b = req.file) === null || _b === void 0 ? void 0 : _b.path;
+        const localFilePath = (_a = req.file) === null || _a === void 0 ? void 0 : _a.path;
         const emailExist = yield UserModel_1.default.findOne({ email });
         if (emailExist) {
             fs_1.default.unlinkSync(localFilePath);

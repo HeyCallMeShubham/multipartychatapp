@@ -234,8 +234,6 @@ const MultiPartyConversation = () => {
 
         });
 
-
-
       });
 
 
@@ -252,8 +250,6 @@ const MultiPartyConversation = () => {
 
 
   useEffect(() => {
-
-
 
     if (mediaSoupStateProps.producerTransport !== undefined && mediaSoupStateProps.audioParams && mediaSoupStateProps.videoParams) {
 

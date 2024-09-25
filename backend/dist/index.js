@@ -136,10 +136,91 @@ const createWorkerFunction = () => __awaiter(void 0, void 0, void 0, function* (
     worker = yield createWorker();
 }))();
 const io = (0, useSocket_1.useSocket)();
+io.on("connection", (socket) => {
+    console.log(socket.id, 'new user ');
+    sockets.set(socket.id, socket);
+    socket.on("addActiveUser", ({ email }) => {
+        addActiveUser(socket, email);
+    });
+    socket.on("createRoom", (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ roomId }, callback) {
+        var _b;
+        const router = yield createRouter();
+        const userEmail = (_b = socketToEmail.get(socket.id)) === null || _b === void 0 ? void 0 : _b.email;
+        activeRooms.set(roomId, {
+            router,
+            roomMembers: [{ email: userEmail }],
+        });
+        yield RoomModel_1.default.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
+        updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
+        const roomJoinUrl = `/admin/v1/${roomId}`;
+        callback({ routerRtpCapabilities: router === null || router === void 0 ? void 0 : router.rtpCapabilities, url: roomJoinUrl });
+    }));
+    socket.on('joinRoom', (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ roomId }, callback) {
+        var _b;
+        try {
+            if (activeRooms.get(roomId).roomMembers.includes(socket.id)) {
+                return;
+            }
+            else {
+                const roomData = activeRooms.get(roomId);
+                if (!roomData)
+                    throw new ApiError_1.default(404, "no room with this id found");
+                const router = roomData === null || roomData === void 0 ? void 0 : roomData.router;
+                const userEmail = (_b = socketToEmail.get(socket.id)) === null || _b === void 0 ? void 0 : _b.email;
+                yield RoomModel_1.default.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
+                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }];
+                activeRooms.set(roomId, roomData);
+                updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
+                callback({ routerRtpCapabilities: router === null || router === void 0 ? void 0 : router.rtpCapabilities });
+            }
+        }
+        catch (err) {
+            console.log(err);
+            throw new ApiError_1.default(err.code, err.message);
+        }
+    }));
+    socket.on("createWebRtcTransport", (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ consumer }, callback) {
+        const router = findRoomRouter(socket.id);
+        try {
+            if (consumer) {
+                const consumerTransport = yield createWebRtcTransport(router, callback);
+                addConsumerTransport(consumerTransport, socket.id);
+            }
+            else {
+                const producerTransport = yield createWebRtcTransport(router, callback);
+                addProducerTransport(producerTransport, socket.id);
+            }
+        }
+        catch (err) {
+            console.log(err);
+            throw new ApiError_1.default(err.code, err.message);
+        }
+    }));
+    socket.on("disconnect", () => {
+        console.log(socket.id, 'disconnect');
+        const disconnectedUserEmail = socketToEmail.get(socket === null || socket === void 0 ? void 0 : socket.id);
+        emailToSocket.delete(disconnectedUserEmail === null || disconnectedUserEmail === void 0 ? void 0 : disconnectedUserEmail.email);
+        activeUsers.delete(disconnectedUserEmail === null || disconnectedUserEmail === void 0 ? void 0 : disconnectedUserEmail.email);
+        socketToEmail.delete(socket.id);
+        sockets.delete(socket.id);
+    });
+});
 const addActiveUser = (socket, email) => {
+    var _a;
     try {
-        emailToSocket.set(email, socket);
-        socketToEmail.set(socket.id, email);
+        if (emailToSocket.get(email)) {
+            const previousSocketObj = emailToSocket.get(email);
+            const activeUserObj = activeUsers.get(email);
+            previousSocketObj.socket = socket;
+            activeUserObj.email = email;
+            activeUserObj.socket = socket;
+            socketToEmail.set(socket.id, socketToEmail.get(previousSocketObj.socket.id));
+            emailToSocket.set(email, previousSocketObj);
+            activeUsers.set(email, activeUserObj);
+            socketToEmail.delete((_a = previousSocketObj === null || previousSocketObj === void 0 ? void 0 : previousSocketObj.socket) === null || _a === void 0 ? void 0 : _a.id);
+        }
+        socketToEmail.set(socket.id, { email: email });
+        emailToSocket.set(email, { socket: socket });
         activeUsers.set(email, {
             email: email,
             socket: socket,
@@ -152,259 +233,85 @@ const addActiveUser = (socket, email) => {
     }
     catch (err) {
         console.log(err);
-        throw new ApiError_1.default(err.message);
+        throw new ApiError_1.default(err.code, err.message);
     }
 };
-io.on("connection", (socket) => {
-    console.log(socket.id, 'new user ');
-    sockets.set(socket.id, socket);
-    socket.on("addActiveUser", ({ email }) => {
-        addActiveUser(socket, email);
-    });
-    socket.on("createRoom", (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ roomId }, callback) {
-        const router = yield createRouter();
-        const userEmail = socketToEmail.get(socket.id);
-        activeRooms.set(roomId, {
-            router,
-            roomMembers: [{ email: userEmail }], /// later we will replace socket.id with email 
-        });
-        yield RoomModel_1.default.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
-        updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
-        const roomJoinUrl = `/admin/v1/${roomId}`;
-        callback({ routerRtpCapabilities: router === null || router === void 0 ? void 0 : router.rtpCapabilities, url: roomJoinUrl });
-    }));
-    socket.on('joinRoom', (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ roomId }, callback) {
-        try {
-            if (activeRooms.get(roomId).roomMembers.includes(socket.id)) {
-                return;
-            }
-            else {
-                const roomData = activeRooms.get(roomId);
-                const router = roomData === null || roomData === void 0 ? void 0 : roomData.router;
-                const userEmail = socketToEmail.get(socket.id);
-                yield RoomModel_1.default.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
-                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }];
-                activeRooms.set(roomId, roomData);
-                updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
-                callback({ routerRtpCapabilities: router === null || router === void 0 ? void 0 : router.rtpCapabilities });
-            }
-        }
-        catch (err) {
-            console.log(err);
-            throw new ApiError_1.default(err.message);
-        }
-    }));
-    socket.on("createWebRtcTransport", (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ consumer }, callback) {
-        var _b, _c;
-        const email = socketToEmail.get(socket.id);
-        const roomId = (_b = activeUsers.get(email)) === null || _b === void 0 ? void 0 : _b.currentJoinedRoomId;
-        const router = (_c = activeRooms.get(roomId)) === null || _c === void 0 ? void 0 : _c.router;
-        if (consumer) {
-            const transport = yield createWebRtcTransport(router, callback);
-            addConsumerTransport(transport, roomId, email);
-        }
-        else {
-            const transport = yield createWebRtcTransport(router, callback);
-            addProducerTransport(transport, roomId, email);
-        }
-    }));
-    socket.on("transport-connect", (_a) => __awaiter(void 0, [_a], void 0, function* ({ dtlsParameters, serverProducerTransportId }) {
-        const { transport } = transports.get(serverProducerTransportId);
-        yield transport.connect({ dtlsParameters });
-    }));
-    socket.on("transport-produce", (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ kind, rtpParameters, serverProducerTransportId, roomId }, callback) {
-        const { transport } = transports.get(serverProducerTransportId);
-        const producer = yield transport.produce({ kind, rtpParameters });
-        const roomMembers = activeRooms.get(roomId).roomMembers;
-        const userEmail = socketToEmail.get(socket.id);
-        addProducer(producer, roomId, userEmail);
-        informConsumers(producer, roomId, userEmail);
-        callback({ id: producer.id, roomMembers: roomMembers.length > 1 ? true : false });
-    }));
-    socket.on("transport-recv-connect", (_a) => __awaiter(void 0, [_a], void 0, function* ({ dtlsParameters, serverConsumerTransportId }) {
-        const { transport } = transports.get(serverConsumerTransportId);
-        yield transport.connect({ dtlsParameters });
-    }));
-    socket.on("getProducers", (callback) => {
-        const userEmail = socketToEmail.get(socket.id);
-        const producersList = getProducers(userEmail);
-        callback({ producersList });
-    });
-    socket.on("consume", (_a, callback_1) => __awaiter(void 0, [_a, callback_1], void 0, function* ({ rtpCapabilities, producerId, serverConsumerTransportId }, callback) {
-        const roomId = activeUsers.get(socket.id).currentJoinedRoomId;
-        const router = activeRooms.get(roomId).router;
-        if (router.canConsume({
-            rtpCapabilities,
-            producerId,
-            paused: true
-        })) {
-            const consumerTransport = transports.get(serverConsumerTransportId).transport;
-            const consumer = yield consumerTransport.consume({
-                rtpCapabilities,
-                producerId,
-                paused: true
-            });
-            addConsumer(consumer, roomId, socket.id);
-            callback({
-                params: {
-                    id: consumer.id,
-                    rtpParameters: consumer.rtpParameters,
-                    producerId,
-                    kind: consumer.kind,
-                }
-            });
-        }
-    }));
-    socket.on("consumer-resume", ({ consumerId }) => {
-        const consumer = consumers.get(consumerId).consumer;
-        consumer.resume();
-    });
-    socket.on("disconnect", () => {
-        console.log(socket.id, 'disconnect');
-        const disconnectedUserEmail = socketToEmail.get(socket.id);
-        emailToSocket.delete(disconnectedUserEmail);
-        activeUsers.delete(disconnectedUserEmail);
-        sockets.delete(socket.id);
-    });
-});
 const createRouter = () => __awaiter(void 0, void 0, void 0, function* () {
     const router = yield (worker === null || worker === void 0 ? void 0 : worker.createRouter({ mediaCodecs }));
     return router;
 });
 const createWebRtcTransport = (router, callback) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const transportOptions = {
+        const webRtcTransportOptions = {
             listenInfos: [{
                     protocol: "udp",
                     ip: "0.0.0.0",
-                    announcedAddress: "192.168.1.5"
+                    announcedAddress: ""
                 }],
             enableUdp: true,
             enableTcp: true,
             preferUdp: true,
             preferTcp: true,
         };
-        const transport = yield (router === null || router === void 0 ? void 0 : router.createWebRtcTransport(transportOptions));
+        const transport = yield (router === null || router === void 0 ? void 0 : router.createWebRtcTransport(webRtcTransportOptions));
         callback({
             params: {
                 id: transport === null || transport === void 0 ? void 0 : transport.id,
                 iceParameters: transport === null || transport === void 0 ? void 0 : transport.iceParameters,
                 iceCandidates: transport === null || transport === void 0 ? void 0 : transport.iceCandidates,
                 dtlsParameters: transport === null || transport === void 0 ? void 0 : transport.dtlsParameters,
-                sctpParameters: transport === null || transport === void 0 ? void 0 : transport.sctpParameters
             }
         });
+        console.log(transport, 'transport');
         return transport;
     }
     catch (err) {
-        console.log(err);
-        throw new ApiError_1.default(err.message);
     }
 });
-const getProducers = (userEmail) => {
+const findRoomRouter = (socketId) => {
+    // this function will get the router of the room that user have joined and return it
+    var _a;
     try {
-        const userData = activeUsers.get(userEmail);
-        const roomId = userData.currentJoinedRoomId;
-        const producersOfRoom = roomProducers.get(roomId);
-        let producersList = [];
-        producersOfRoom.forEach((producerData) => {
-            if (producerData.email !== userEmail) {
-                producersList = [...producersList, producerData.producerId];
-            }
-        });
-        return producersList;
+        const userEmail = (_a = socketToEmail.get(socketId)) === null || _a === void 0 ? void 0 : _a.email;
+        const roomName = activeUsers.get(userEmail).currentJoinedRoomId;
+        if (!roomName)
+            throw new ApiError_1.default(401, "the room your trying to join either closed or do not exist, cannot proceed further");
+        const { router } = activeRooms.get(roomName);
+        return router;
     }
     catch (err) {
         console.log(err);
+        throw new ApiError_1.default(err.code, err.message);
     }
 };
-const addProducerTransport = (transport, roomId, email) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        transports.set(transport.id, {
-            transport,
-            email,
-            roomId
-        });
-        updateActiveUserPropState(email, "producerTransportId", transport.id);
-    }
-    catch (err) {
-        console.log(err);
-        throw new ApiError_1.default(err.message);
-    }
-});
-const addConsumerTransport = (transport, roomId, email) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        transports.set(transport.id, {
-            transport,
-            email,
-            roomId
-        });
-        updateActiveUserPropState(email, "consumerTransportId", transport.id);
-    }
-    catch (err) {
-        console.log(err);
-        throw new ApiError_1.default(err.message);
-    }
-});
-const addProducer = (producer, roomId, email) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        producers.set(producer.id, {
-            producer,
-            email
-        });
-        if (roomProducers.has(roomId)) {
-            const producersOfRoom = roomProducers.get(roomId);
-            roomProducers.set(roomId, [...producersOfRoom, { producerId: producer.id, email }]);
-        }
-        else {
-            roomProducers.set(roomId, [{ producerId: producer.id, email, }]);
-        }
-        updateActiveUserPropState(email, "producerId", producer.id);
-    }
-    catch (err) {
-        console.log(err);
-    }
-});
-const addConsumer = (consumer, roomId, email) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        consumers.set(consumer.id, {
-            consumer,
-            email
-        });
-        updateActiveUserPropState(email, "consumerId", consumer.id);
-    }
-    catch (err) {
-        console.log(err);
-    }
-});
-const informConsumers = (producer, roomId, currentUserEmail) => {
-    const roomMembers = activeRooms.get(roomId).roomMembers;
-    const emails = roomMembers.filter((roomMember) => roomMember.email !== currentUserEmail);
-    emails.forEach((email) => {
-        console.log(email, "email");
-        const socket = activeUsers.get(email).socket;
-        socket.emit("new-producer", { producerId: producer.id });
-    });
-};
-const getUser = () => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-    }
-    catch (err) {
-        console.log(err);
-    }
-});
 const updateActiveUserPropState = (email, prop, value) => {
     try {
         const userData = activeUsers.get(email);
-        console.log(userData, 'userDta');
         userData[prop] = value;
         activeUsers.set(email, userData);
-        console.log(activeUsers.get(email), 'activeUser');
     }
     catch (err) {
         console.log(err);
-        throw new ApiError_1.default(err.message);
+        throw new ApiError_1.default(err.code, err.message);
     }
 };
-const removeFromRoom = () => {
+const addProducerTransport = (transport, socketId) => {
+    transports.set(transport.id, {
+        transport,
+    });
+    const userEmail = socketToEmail.get(socketId).email;
+    const userData = activeUsers.get(userEmail);
+    userData.producerTransport = transport;
+    activeUsers.set(userEmail, userData);
+    producers.set(transport.id, transport);
+};
+const addConsumerTransport = (transport, socketId) => {
+    transports.set(transport.id, {
+        transport,
+    });
+    const userEmail = socketToEmail.get(socketId).email;
+    const userData = activeUsers.get(userEmail);
+    userData.consumerTransport = transport;
+    activeUsers.set(userEmail, userData);
+    consumers.set(transport.id, transport);
 };

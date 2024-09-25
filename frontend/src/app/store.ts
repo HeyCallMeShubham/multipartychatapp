@@ -29,7 +29,7 @@ const persistConfig: iPersistConfig = {
 
     key: "mulipartychatroom",
     version: 1,
-    blacklist: ["socket", SignInApiSlice.reducerPath, SignUpApiSlice.reducerPath, checkUserAuthenticationApi.reducerPath, createRoomApi.reducerPath],
+    blacklist: ["socket","mediaSoupStates", SignInApiSlice.reducerPath, SignUpApiSlice.reducerPath, checkUserAuthenticationApi.reducerPath, createRoomApi.reducerPath],
     storage
 
 }

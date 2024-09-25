@@ -8,10 +8,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 const ActiveUserWrapper = () => {
 
     const currentLoggedInUser = useSelector((state: any) => state?.currentUser?.currentLoggedInUser)
-
-
-    console.log(currentLoggedInUser, 'currentLoggedInUser');
-
+ 
 
 
     const socketIo = useMemo(() => socketConnection(currentLoggedInUser?.email), []);

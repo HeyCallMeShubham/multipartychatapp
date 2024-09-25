@@ -19,7 +19,6 @@ const ApiResponse_1 = require("../../utils/ApiResponse");
 const CheckUserAuth = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const refreshToken = req.cookies[process.env.JWT_REFRESH_COOKIE_NAME];
-        console.log(refreshToken, 'refresh');
         if (!refreshToken) {
             throw new ApiError_1.default(404, "no refresh token found either expired or not available please login again");
         }

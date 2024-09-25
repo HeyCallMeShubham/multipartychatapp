@@ -8,7 +8,7 @@ import { IoIosReverseCamera } from "react-icons/io";
 import { BsThreeDots } from "react-icons/bs";
 import { HiOutlineSpeakerWave } from "react-icons/hi2";
 import { FaDisplay } from "react-icons/fa6";
-import * as mediasoup from "mediasoup-client"
+import * as mediasoupClient from "mediasoup-client";
 import { types as mediasouptypes } from "mediasoup-client"
 import { FaMobileAlt } from "react-icons/fa";
 
@@ -62,7 +62,7 @@ const AdminPanel = () => {
   useEffect(() => {
 
     socketIo.on("new-producer", ({ producerId }: { producerId: string }) => {
-
+ 
       dispatch(setMediaSoupState({ prop: "producerIds", value: producerId }));
 
     });
@@ -88,30 +88,21 @@ const AdminPanel = () => {
 
     try {
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-      const audioTrack = stream.getAudioTracks()[0]
-      const videoTrack = stream.getVideoTracks()[0]
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
 
 
-
-      dispatch(setMediaSoupState({ prop: "audioParams", value: { track: audioTrack, ...mediaSoupStateProps.audioParams } }));
       dispatch(setMediaSoupState({ prop: "videoParams", value: { track: videoTrack, ...mediaSoupStateProps.videoParams } }));
 
+      dispatch(setMediaSoupState({ prop: "audioParams", value: { track: audioTrack } }));
 
       localStream.current.srcObject = stream
-
-      socketIo?.emit("joinRoom", { roomId }, ({ routerRtpCapabilities }: { routerRtpCapabilities: RtpCapabilities }) => {
-
-        dispatch(setMediaSoupState({ prop: "routerRtpCapabilities", value: routerRtpCapabilities }));
-
-      });
 
     } catch (err: any) {
 
       alert(err.message);
-
-
 
       console.log(err);
 
@@ -120,14 +111,11 @@ const AdminPanel = () => {
   }
 
 
-
-
   useEffect(() => {
 
     getMediaTracks();
 
   }, []);
-
 
 
 
@@ -143,15 +131,15 @@ const AdminPanel = () => {
   }, [mediaSoupStateProps.routerRtpCapabilities]);
 
 
-
-
+ 
 
 
   const createDevice = useCallback(async () => {
 
     try {
 
-      const device: mediasouptypes.Device = new mediasoup.Device()
+      const device: mediasouptypes.Device = new mediasoupClient.Device()
+
 
       await device.load({
 
@@ -159,7 +147,11 @@ const AdminPanel = () => {
 
       });
 
+
       dispatch(setMediaSoupState({ prop: "device", value: device }));
+
+
+      createSendTransport(device);
 
     } catch (err) {
 
@@ -172,30 +164,17 @@ const AdminPanel = () => {
 
 
 
-  useEffect(() => {
-
-    if (mediaSoupStateProps.device !== undefined) {
-
-      createSendTransport();
-
-    }
-
-  }, [mediaSoupStateProps.device]);
 
 
-
-
-
-
-  const createSendTransport = useCallback(async () => {
+  const createSendTransport = useCallback(async (device: mediasouptypes.Device) => {
 
     try {
 
-      socketIo.emit("createWebRtcTransport", { consumer: false }, async ({ params }: any) => {
+      socketIo?.emit("createWebRtcTransport", { consumer: false }, async ({ params }: any) => {
 
-        const producerTransport: mediasouptypes.Transport = await mediaSoupStateProps?.device?.createSendTransport({ params });
+        const producerTransport: mediasouptypes.Transport = device.createSendTransport(params);
 
-        dispatch(setMediaSoupState({ prop: "producerTranspor", value: producerTransport }));
+        dispatch(setMediaSoupState({ prop: "producerTransport", value: producerTransport }));
 
         producerTransport.on("connect", async ({ dtlsParameters }: { dtlsParameters: mediasouptypes.DtlsParameters }, callback: Function, errback: Function) => {
 
@@ -203,6 +182,7 @@ const AdminPanel = () => {
 
             await socketIo.emit("transport-connect", { serverSideProducerTransportId: params.id, dtlsParameters });
 
+            callback();
 
           } catch (error: any) {
 
@@ -215,19 +195,17 @@ const AdminPanel = () => {
         });
 
 
-        producerTransport.on("produce", async (parameters, callback: Function, errback: Function) => {
+        producerTransport.on("produce", async (parameters: any, callback: Function, errback: Function) => {
 
           try {
 
-            const data = await socketIo.emit("transport-produce", {
+            await socketIo.emit("transport-produce", {
               serverSideProducerTransportId: params.id,
               parameters: {
-                transportId: producerTransport.id,
                 kind: parameters.kind,
                 rtpParameters: parameters.rtpParameters
               }
             }, ({ id, roomMembers }: { id: string, roomMembers: boolean }) => {
-
 
               if (roomMembers) getProducers();
 
@@ -235,7 +213,6 @@ const AdminPanel = () => {
 
             });
 
-
           } catch (error: any) {
 
             errback(error);
@@ -245,8 +222,6 @@ const AdminPanel = () => {
           }
 
         });
-
-
 
       });
 
@@ -256,7 +231,40 @@ const AdminPanel = () => {
 
     }
 
-  }, []);
+  }, [mediaSoupStateProps.device]);
+
+
+
+
+
+  useEffect(() => {
+
+    if (mediaSoupStateProps.producerTransport !== undefined && mediaSoupStateProps.audioParams !== undefined && mediaSoupStateProps.videoParams !== undefined) {
+
+      connectSendTransport();
+
+    }
+
+  }, [mediaSoupStateProps.producerTransport, mediaSoupStateProps.audioParams, mediaSoupStateProps.videoParams]);
+
+
+
+
+
+  const connectSendTransport = useCallback(async () => {
+
+    try {
+
+      const audioProducer = await mediaSoupStateProps?.producerTransport?.produce(mediaSoupStateProps.audioParams);
+      const videoProducer = await mediaSoupStateProps?.producerTransport?.produce(mediaSoupStateProps.videoParams);
+
+    } catch (err: any) {
+
+      console.log(err);
+
+    }
+
+  }, [mediaSoupStateProps.producerTransport, mediaSoupStateProps.audioParams, mediaSoupStateProps.videoParams]);
 
 
 
