@@ -24,6 +24,7 @@ import { dotenvConfig } from "./dotenvConfig"
 import { v2 as cloudinary } from "cloudinary"
 import authenticateUser from "./middlewares/authenticateUser";
 import { DtlsParameters } from "mediasoup/node/lib/fbs/web-rtc-transport";
+import { isAwaitExpression } from "typescript";
 
 
 
@@ -228,13 +229,12 @@ io.on("connection", (socket: Socket) => {
 
     sockets.set(socket.id, socket);
 
+
     socket.on("addActiveUser", ({ email }) => {
 
         addActiveUser(socket, email);
 
     });
-
-
 
 
 
@@ -252,11 +252,9 @@ io.on("connection", (socket: Socket) => {
         });
 
 
-
         await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
 
         updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
-
 
 
         const roomJoinUrl: string = `/admin/v1/${roomId}`
@@ -264,8 +262,6 @@ io.on("connection", (socket: Socket) => {
         callback({ routerRtpCapabilities: router?.rtpCapabilities, url: roomJoinUrl });
 
     });
-
-
 
 
 
@@ -381,11 +377,11 @@ io.on("connection", (socket: Socket) => {
 
             const { roomMembers } = getRoomRouterAndMembers(socket.id);
 
-            informConsumers(producer, socket.id);
+            callback({ id: producer.id, roomMembers: roomMembers.length > 1 ? true : false });
 
             addProducer(producer, socket.id);
 
-            callback({ id: producer.id, roomMembers: roomMembers.length > 1 ? true : false });
+            informConsumers(producer, socket.id);
 
         } catch (err: any) {
 
@@ -396,7 +392,120 @@ io.on("connection", (socket: Socket) => {
     });
 
 
+    socket.on("transport-recv-connect", async ({ serverSideConsumerTransportId, dtlsParameters }: { serverSideConsumerTransportId: string, dtlsParameters: mediasoupTypes.DtlsParameters }) => {
 
+        try {
+
+            const consumerTransport: mediasoupTypes.WebRtcTransport = transports.get(serverSideConsumerTransportId);
+
+            await consumerTransport.connect({ dtlsParameters });
+
+        } catch (err: any) {
+
+            console.log(err);
+
+        }
+
+
+    });
+
+
+
+
+
+
+
+    socket.on("getProducers", (callback: Function) => {
+
+        const { roomMembers } = getRoomRouterAndMembers(socket.id);
+
+        const userEmail = socketToEmail.get(socket.id).email;
+
+        const roomExistingMembers = roomMembers.filter((roomMember: any) => roomMember.email === userEmail);
+
+        let producerIds: string[] = []
+
+        roomExistingMembers.forEach((member: any) => {
+
+            const producerIdToFindProducer = activeUsers.get(member.email).producerId;
+
+            const producerId: string = producers.get(producerIdToFindProducer).id;
+
+            producerIds = [...producerIds, producerId]
+
+        });
+
+        callback({ producerIds });
+
+    });
+
+
+
+    socket.on("consume", async ({
+        producerId,
+        rtpCapabilities,
+        serverSideConsumerTransportId },
+        callback: Function) => {
+
+        try {
+
+            const { router } = getRoomRouterAndMembers(socket.id);
+
+            if (router.canConsume({
+
+                producerId,
+                rtpCapabilities,
+                paused: true
+
+            })) {
+
+                const consumerTransport = transports.get(serverSideConsumerTransportId);
+
+                const consumer = await consumerTransport.consume({
+
+                    rtpCapabilities,
+                    producerId,
+                    paused: true
+
+                });
+
+                console.log(consumer, 'consumerr')
+
+                addConsumer(consumer, socket.id);
+
+
+                callback({
+
+                    id: consumer.id,
+                    rtpParameters: consumer.rtpParameters,
+                    producerId,
+                    kind: consumer.kind
+
+                });
+
+
+
+            }
+
+
+
+
+        } catch (err: any) {
+
+            console.log(err);
+
+        }
+
+    })
+
+
+    socket.emit("consumer-resume", ({ consumerId }: any) => {
+
+        const consumer = consumers.get(consumerId);
+
+        consumer.resume();
+
+    });
 
 
     socket.on("disconnect", () => {
@@ -591,7 +700,6 @@ const updateActiveUserPropState = (email: string, prop: string, value: any) => {
 
         activeUsers.set(email, userData);
 
-
     } catch (err: any) {
 
         console.log(err);
@@ -653,11 +761,11 @@ const addProducer = (producer: mediasoupTypes.Producer, socketId: string) => {
 
 
         const userEmail = socketToEmail.get(socketId).email;
-        const userData = emailToSocket.get(userEmail);
+        const userData = activeUsers.get(userEmail);
 
         userData.producerId = producer.id;
 
-        emailToSocket.set(userEmail, userData);
+        activeUsers.set(userEmail, userData);
 
         producers.set(producer.id, producer);
 
@@ -674,19 +782,19 @@ const addProducer = (producer: mediasoupTypes.Producer, socketId: string) => {
 
 
 
-const addConsumer = (consumer: mediasoupTypes.Producer, socketId: string) => {
+const addConsumer = (consumer: mediasoupTypes.Consumer, socketId: string) => {
 
     try {
 
 
         const userEmail = socketToEmail.get(socketId).email;
-        const userData = emailToSocket.get(userEmail);
+        const userData = activeUsers.get(userEmail);
 
         userData.consumerId = consumer.id;
 
-        emailToSocket.set(userEmail, userData);
+        activeUsers.set(userEmail, userData);
 
-        producers.set(consumer.id, consumer);
+        consumers.set(consumer.id, consumer);
 
 
     } catch (err: any) {
@@ -701,7 +809,6 @@ const addConsumer = (consumer: mediasoupTypes.Producer, socketId: string) => {
 
 
 
-
 const informConsumers = (producer: mediasoupTypes.Producer, socketId: string) => {
 
     try {
@@ -710,17 +817,15 @@ const informConsumers = (producer: mediasoupTypes.Producer, socketId: string) =>
 
         const userEmail = socketToEmail.get(socketId).email;
 
-        const roomMembersToInform: any[] = roomMembers.filter((user: any) => user.email === userEmail);
+        const roomMembersToInform: any[] = roomMembers.filter((user: any) => user.email !== userEmail);
 
         roomMembersToInform.forEach((user: any) => {
 
             const socket = emailToSocket.get(user.email).socket;
 
-            console.log(socket, 'socket')
-
             socket.emit("new-producer", { producerId: producer.id });
 
-        })
+        });
 
     } catch (err: any) {
 

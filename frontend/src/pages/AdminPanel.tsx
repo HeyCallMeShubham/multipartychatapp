@@ -62,7 +62,7 @@ const AdminPanel = () => {
   useEffect(() => {
 
     socketIo.on("new-producer", ({ producerId }: { producerId: string }) => {
- 
+
       dispatch(setMediaSoupState({ prop: "producerIds", value: producerId }));
 
     });
@@ -131,7 +131,7 @@ const AdminPanel = () => {
   }, [mediaSoupStateProps.routerRtpCapabilities]);
 
 
- 
+
 
 
   const createDevice = useCallback(async () => {
@@ -272,18 +272,118 @@ const AdminPanel = () => {
 
   const getProducers = () => {
 
+    try {
 
+      socketIo.emit("getProducers", ({ producerIds }: any) => {
+
+
+        producerIds.forEach((producerId: string) => {
+
+          dispatch(setMediaSoupState({ prop: "producerIds", value: producerId }))
+
+        });
+
+      });
+
+    } catch (err: any) {
+
+      console.log(err);
+
+    }
 
 
   }
 
 
 
+  useEffect(() => {
+
+    if (mediaSoupStateProps.producerIds.length) {
+
+      mediaSoupStateProps.producerIds.forEach((producerId: any) => {
+
+        signalNewConsumerTransport(producerId);
+
+      });
+
+    }
+
+  }, [mediaSoupStateProps.producerIds]);
+
+
+
+  const signalNewConsumerTransport = (remoteProducerId: string) => {
+
+    try {
+
+      socketIo.emit("createWebRtcTransport", { consumer: true }, ({ params }: any) => {
+
+        const consumerTransport: mediasouptypes.Transport = mediaSoupStateProps.device.createRecvTransport(params);
+
+        dispatch(setMediaSoupState({ prop: "consumerTransport", value: consumerTransport }))
+
+        consumerTransport.on("connect", ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, callback: Function, errback: Function) => {
+
+          socketIo.emit("transport-recv-connect", { serverSideConsumerTransportId: params.id, dtlsParameters })
+
+          callback()
+
+        });
+
+        connectRecvTransport(consumerTransport, remoteProducerId, params.id);
+
+      });
+
+    } catch (err: any) {
+
+      console.log(err);
+
+    }
+
+  }
 
 
 
 
+  const connectRecvTransport = useCallback(async (consumerTransport: mediasouptypes.Transport, remoteProducerId: string, serverSideConsumerTransportId: string) => {
 
+    try {
+
+      socketIo?.emit("consume", {
+        producerId: remoteProducerId,
+        rtpCapabilities: mediaSoupStateProps?.device?.rtpCapabilities,
+        serverSideConsumerTransportId
+      }, async (params: any) => {
+
+
+        const consumer = await consumerTransport.consume({
+
+          kind: params.kind,
+          id: params.id,
+          producerId: params.producerId,
+          rtpParameters: params.rtpParameters
+
+        });
+
+
+        const { track }: any = consumer
+
+        console.log(track, 'tracks')
+
+        socketIo.emit("consumer-resume", { consumerId: params.id });
+
+        dispatch(setMediaSoupState({ prop: "streamTracks", value: track }))
+
+      });
+
+    } catch (err: any) {
+
+      console.log(err);
+
+    }
+  }, [mediaSoupStateProps.device])
+
+    
 
 
 
