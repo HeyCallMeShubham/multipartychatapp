@@ -49,7 +49,7 @@ const MultiPartyConversation = () => {
 
   const [isNestedOptionOpen, setIsNestedOptionOpen] = useState(false);
 
-  //  const socketIoServer = useSocket();
+  const currentLoggedInUser = useSelector((state: any) => state?.currentUser?.currentLoggedInUser);
 
   const socketIo = useSelector((state: any) => state.socket.socket);
 
@@ -104,7 +104,7 @@ const MultiPartyConversation = () => {
   useEffect(() => {
 
     socketIo.on("connect_error", (err: any) => {
-    console.log(err, 'gg')
+      console.log(err, 'gg')
 
     });
 
@@ -517,8 +517,8 @@ const MultiPartyConversation = () => {
       </div>
 
 
-      <BottomMultipartyOptionsDesktop />
-      <BottomMultipartyOptionsMobile />
+      <BottomMultipartyOptionsDesktop socket={socketIo} userEmail={currentLoggedInUser.email} />
+      <BottomMultipartyOptionsMobile socket={socketIo} userEmail={currentLoggedInUser.email} />
 
     </div >
   )

@@ -513,6 +513,11 @@ io.on("connection", (socket: Socket) => {
 
 
 
+    socket.on("leave-room", ({ roomId, email }: any, callback: Function) => {
+
+        leaveRoom(roomId, email, callback);
+
+    });
 
 
 
@@ -547,7 +552,12 @@ io.on("connection", (socket: Socket) => {
 
         console.log(socket.id, 'disconnect');
 
+
         const disconnectedUserEmail = socketToEmail.get(socket?.id);
+
+        const userData = activeUsers.get(disconnectedUserEmail);
+
+        leaveRoom(userData?.currentJoinedRoomId, disconnectedUserEmail);
 
         emailToSocket.delete(disconnectedUserEmail?.email);
 
@@ -965,6 +975,40 @@ const endMeeting = async (roomId: string, email: string) => {
 
 
 
+
+const leaveRoom = (roomId: string, email: string, callback?: Function | any) => {
+
+    try {
+
+        const roomData:any = activeRooms.get(roomId);
+
+        roomData.roomMembers = roomData.roomMembers.filter((member: any) => member.email !== email)
+
+        activeRooms.set(roomId, roomData);
+
+        const data = roomData.roomMembers.find((member: any) => member.email === email);
+
+
+        if (!data) {
+
+            callback({ data: true });
+
+            const userData = activeUsers.get(email);
+
+            userData.currentJoinedRoomId = ""
+
+            activeUsers.set(email, userData);
+
+
+        };
+
+    } catch (err: any) {
+
+        console.log(err);
+
+    }
+
+}
 
 
 

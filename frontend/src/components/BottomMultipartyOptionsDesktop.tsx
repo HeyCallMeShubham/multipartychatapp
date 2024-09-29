@@ -11,7 +11,7 @@ import { FaVideo } from "react-icons/fa";
 import { FaVideoSlash } from "react-icons/fa6";
 import "../styles/components/bottomMultipartyOptionsDesktop.css"
 import NestedMoreOptions from './NestedMoreOptions';
-import { Params, useParams } from 'react-router-dom';
+import { Navigate, Params, useNavigate, useParams } from 'react-router-dom';
 
 
 
@@ -22,7 +22,7 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
     const [isNestedOptionOpen, setIsNestedOptionOpen] = useState(false);
 
     const { roomId }: Readonly<Params<string>> = useParams();
-
+    const redirect = useNavigate();
     const getMedia = async () => {
 
         try {
@@ -121,6 +121,29 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
 
 
+    const leaveMeeting = useCallback(() => {
+
+        try {
+
+            socket.emit("leave-room", { roomId, email: userEmail }, ({ data }: any) => {
+
+                if (data) redirect("/")
+
+            })
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    }, []);
+
+
+
+
+
+
 
 
     return (
@@ -141,9 +164,9 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
             {true
                 ?
-                <button className='endBtn btn' onClick={endMeeting}>END</button>
+                <button className='leaveBtn btn' onClick={leaveMeeting}>LEAVE</button>
                 :
-                <button className='leaveBtn btn'>LEAVE</button>
+                <button className='endBtn btn' onClick={endMeeting}>END</button>
             }
 
 

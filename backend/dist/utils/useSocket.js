@@ -9,7 +9,11 @@ const useSocket = () => {
         cors: {
             origin: ["http://localhost:3000"],
             methods: ["GET", "POST", "PUT", "DELETE"]
-        }
+        },
+        serveClient: true,
+        allowRequest: (req, callback) => {
+            callback(null, true);
+        },
     });
     io.listen(8700);
     return io;

@@ -136,11 +136,6 @@ const createWorkerFunction = () => __awaiter(void 0, void 0, void 0, function* (
     worker = yield createWorker();
 }))();
 const io = (0, useSocket_1.useSocket)();
-io.use((socket, next) => {
-    console.log(socket.handshake, 'sahle');
-    //if(socket.handshake.headers["email"]){
-    //}
-});
 io.on("connection", (socket) => {
     console.log(socket.id, 'new user ');
     sockets.set(socket.id, socket);
@@ -285,6 +280,7 @@ io.on("connection", (socket) => {
         const consumer = consumers.get(consumerId);
         consumer.resume();
     });
+    socket.on("leave-room", ({ roomId, email }) => leaveRoom);
     socket.on("end-meeting", ({ email, roomId }) => {
         try {
             const userData = activeUsers.get(email);
@@ -489,3 +485,11 @@ const endMeeting = (roomId, email) => __awaiter(void 0, void 0, void 0, function
         throw new ApiError_1.default(err.code, err.message);
     }
 });
+const leaveRoom = (roomId, email) => {
+    try {
+        console.log(roomId, email, 'fggg');
+    }
+    catch (err) {
+        console.log(err);
+    }
+};
