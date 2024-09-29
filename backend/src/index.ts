@@ -307,14 +307,11 @@ io.on("connection", (socket: Socket) => {
 
             }
 
-
-
         } catch (err: any) {
 
             console.log(err);
 
         }
-
 
     });
 
