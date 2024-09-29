@@ -7,8 +7,21 @@ import { ApiResponse } from "./../../utils/ApiResponse";
 import { NextFunction, Request, Response } from "express";
 
 
+interface iRequest extends Request {
 
-const createRoom = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    user: {
+
+        _id: string,
+        email: string,
+        userName: string,
+        fullName: string
+
+    }
+
+}
+
+
+const createRoom = asyncHandler(async (req: iRequest, res: Response, next: NextFunction) => {
 
 
 
@@ -19,10 +32,7 @@ const createRoom = asyncHandler(async (req: Request, res: Response, next: NextFu
         const room = new MultipartyRoom({
 
             roomId: roomId,
-           /// roomDescription: "dont make too much noise",
-         ///   roomMembers: [{ userEmail: "shubhamkumarin@2022@gmail.com", userName: "shubham", isAdmin: true }],
-           // roomAdmins: [{ userEmail: "shubhamkumarin@2022@gmail.com", userName: "shubham", isSuspended: true }],
-           // creatorOfRoom: { userEmail: 'shubhamkuamrin2022@gmail.com', userName: 'gff' }
+            creatorOfRoom: req.user._id
 
         });
 

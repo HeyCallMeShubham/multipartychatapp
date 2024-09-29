@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { IoMic } from "react-icons/io5";
 import { IoMicOff } from "react-icons/io5";
 import { IoIosReverseCamera } from "react-icons/io";
@@ -11,16 +11,17 @@ import { FaVideo } from "react-icons/fa";
 import { FaVideoSlash } from "react-icons/fa6";
 import "../styles/components/bottomMultipartyOptionsDesktop.css"
 import NestedMoreOptions from './NestedMoreOptions';
+import { Params, useParams } from 'react-router-dom';
 
 
 
-const BottomMultipartyOptionsDesktop = () => {
+const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
     const [isMicOn, setIsMicOn] = useState(false);
 
     const [isNestedOptionOpen, setIsNestedOptionOpen] = useState(false);
 
-
+    const { roomId }: Readonly<Params<string>> = useParams();
 
     const getMedia = async () => {
 
@@ -100,6 +101,28 @@ const BottomMultipartyOptionsDesktop = () => {
 
 
 
+
+    const endMeeting = useCallback(() => {
+
+        try {
+
+            socket.emit("end-meeting", ({ roomId, email: userEmail }))
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    }, []);
+
+
+
+
+
+
+
+
     return (
 
         <div className='bottomOptionsMainContianer hideWhenInMobile'>
@@ -118,9 +141,9 @@ const BottomMultipartyOptionsDesktop = () => {
 
             {true
                 ?
-                <button className='leaveBtn btn'>LEAVE</button>
+                <button className='endBtn btn' onClick={endMeeting}>END</button>
                 :
-                <button className='endBtn btn'>END</button>
+                <button className='leaveBtn btn'>LEAVE</button>
             }
 
 

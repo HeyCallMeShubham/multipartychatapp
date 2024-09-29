@@ -23,10 +23,7 @@ const createRoom = (0, AsyncHandler_1.default)((req, res, next) => __awaiter(voi
         const roomId = (0, uuid_1.v4)();
         const room = new RoomModel_1.default({
             roomId: roomId,
-            /// roomDescription: "dont make too much noise",
-            ///   roomMembers: [{ userEmail: "shubhamkumarin@2022@gmail.com", userName: "shubham", isAdmin: true }],
-            // roomAdmins: [{ userEmail: "shubhamkumarin@2022@gmail.com", userName: "shubham", isSuspended: true }],
-            // creatorOfRoom: { userEmail: 'shubhamkuamrin2022@gmail.com', userName: 'gff' }
+            creatorOfRoom: req.user._id
         });
         const createdRoom = yield room.save();
         if (createdRoom) {

@@ -9,13 +9,21 @@ const { httpsServer } = useExpressAppAndHttpsServer()
 const useSocket = (): Server => {
 
     const io: Server = new Server(httpsServer, {
-
         cors: {
 
             origin: ["http://localhost:3000"],
             methods: ["GET", "POST", "PUT", "DELETE"]
 
-        }
+        
+        },
+
+        serveClient:true,
+
+        allowRequest:(req, callback) =>{
+
+            callback(null, true)
+
+        },
 
     });
 

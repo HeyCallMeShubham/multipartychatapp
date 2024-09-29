@@ -11,7 +11,7 @@ import { FaVideo } from "react-icons/fa";
 import { FaVideoSlash } from "react-icons/fa6";
 import "../styles/components/bottomMultipartiOptionsMobile.css";
 
-const BottomMultipartyOptionsMobile = () => {
+const BottomMultipartyOptionsMobile = ({ socket }: any) => {
 
 
     const [isMicOn, setIsMicOn] = useState(false);
@@ -73,7 +73,7 @@ const BottomMultipartyOptionsMobile = () => {
 
     return (
 
-        <div className='bottomOptionsMainContainerMobile hideWhenInDesktop' style={{ }}>
+        <div className='bottomOptionsMainContainerMobile hideWhenInDesktop' style={{}}>
 
             {isMicOn
                 ?

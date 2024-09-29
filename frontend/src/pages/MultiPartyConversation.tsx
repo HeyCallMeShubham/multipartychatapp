@@ -86,6 +86,35 @@ const MultiPartyConversation = () => {
 
 
 
+  useEffect(() => {
+
+    socketIo.on("group-message", ({ message }: any) => {
+
+      console.log(message, 'messae')
+
+      alert(message);
+
+    });
+
+  }, [socketIo]);
+
+
+
+
+  useEffect(() => {
+
+    socketIo.on("connect_error", (err: any) => {
+    console.log(err, 'gg')
+
+    });
+
+  }, [socketIo]);
+
+
+
+
+
+
 
 
   const getMediaTracks = async () => {
@@ -106,8 +135,15 @@ const MultiPartyConversation = () => {
 
 
       socketIo?.emit("joinRoom", { roomId }, ({ routerRtpCapabilities }: { routerRtpCapabilities: RtpCapabilities }) => {
+        try {
 
-        dispatch(setMediaSoupState({ prop: "routerRtpCapabilities", value: routerRtpCapabilities }));
+          dispatch(setMediaSoupState({ prop: "routerRtpCapabilities", value: routerRtpCapabilities }));
+
+        } catch (err: any) {
+
+          console.log(err);
+
+        }
 
       });
 
@@ -401,6 +437,10 @@ const MultiPartyConversation = () => {
 
 
 
+
+
+
+
   const toggleMic = () => {
 
     try {
@@ -424,6 +464,9 @@ const MultiPartyConversation = () => {
     }
 
   }
+
+
+
 
 
 

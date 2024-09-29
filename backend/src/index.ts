@@ -1,5 +1,5 @@
 
-import express, { Express } from "express";
+import express, { Express, NextFunction } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
@@ -24,7 +24,7 @@ import { dotenvConfig } from "./dotenvConfig"
 import { v2 as cloudinary } from "cloudinary"
 import authenticateUser from "./middlewares/authenticateUser";
 import { DtlsParameters } from "mediasoup/node/lib/fbs/web-rtc-transport";
-import { isAwaitExpression } from "typescript";
+
 
 
 
@@ -223,6 +223,7 @@ const io: Server = useSocket();
 
 
 
+
 io.on("connection", (socket: Socket) => {
 
     console.log(socket.id, 'new user ');
@@ -244,18 +245,25 @@ io.on("connection", (socket: Socket) => {
 
         const userEmail: string = socketToEmail.get(socket.id)?.email;
 
+
         activeRooms.set(roomId, {
 
             router,
+            roomStatus: "ACTIVE",
             roomMembers: [{ email: userEmail }],
+            admin: userEmail
 
         });
 
 
-        await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
+        await MultipartyRoom.findOneAndUpdate({ roomId }, {
+            $set: {
+                roomId: roomId, roomStatus: "ACTIVE",
+                roomAdmin: { userEmail: userEmail, isAdmin: true }
+            }, $push: { roomMembers: { userEmail: userEmail } }
+        });
 
         updateActiveUserPropState(userEmail, "currentJoinedRoomId", roomId);
-
 
         const roomJoinUrl: string = `/admin/v1/${roomId}`
 
@@ -270,7 +278,7 @@ io.on("connection", (socket: Socket) => {
 
         try {
 
-            if (activeRooms.get(roomId).roomMembers.includes(socket.id)) {
+            if (activeRooms.get(roomId)?.roomMembers.includes(socket.id)) {
 
                 return
 
@@ -280,13 +288,14 @@ io.on("connection", (socket: Socket) => {
 
                 if (!roomData) throw new ApiError(404, "no room with this id found");
 
+
                 const router: mediasoupTypes.Router = roomData?.router;
 
                 const userEmail = socketToEmail.get(socket.id)?.email;
 
                 await MultipartyRoom.findOneAndUpdate({ roomId }, { $set: { roomId: roomId }, $push: { roomMembers: { userEmail: userEmail } } });
 
-                roomData.roomMembers = [...roomData?.roomMembers, { email: userEmail }];
+                roomData.roomMembers = [...roomData.roomMembers, { email: userEmail }];
 
                 activeRooms.set(roomId, roomData);
 
@@ -303,8 +312,6 @@ io.on("connection", (socket: Socket) => {
         } catch (err: any) {
 
             console.log(err);
-
-            throw new ApiError(err.code, err.message);
 
         }
 
@@ -346,6 +353,8 @@ io.on("connection", (socket: Socket) => {
 
 
 
+
+
     socket.on("transport-connect", async ({ serverSideProducerTransportId, dtlsParameters }: { serverSideProducerTransportId: string, dtlsParameters: mediasoupTypes.DtlsParameters }) => {
 
         try {
@@ -358,6 +367,7 @@ io.on("connection", (socket: Socket) => {
 
             console.log(err);
 
+            throw new ApiError(err.code, err.message)
         }
 
 
@@ -387,6 +397,7 @@ io.on("connection", (socket: Socket) => {
 
             console.log(err);
 
+            throw new ApiError(err.code, err.message)
         }
 
     });
@@ -404,12 +415,11 @@ io.on("connection", (socket: Socket) => {
 
             console.log(err);
 
+            throw new ApiError(err.code, err.message)
         }
 
 
     });
-
-
 
 
 
@@ -441,6 +451,8 @@ io.on("connection", (socket: Socket) => {
 
 
 
+
+
     socket.on("consume", async ({
         producerId,
         rtpCapabilities,
@@ -469,10 +481,7 @@ io.on("connection", (socket: Socket) => {
 
                 });
 
-                console.log(consumer, 'consumerr')
-
                 addConsumer(consumer, socket.id);
-
 
                 callback({
 
@@ -483,12 +492,46 @@ io.on("connection", (socket: Socket) => {
 
                 });
 
-
-
             }
 
+        } catch (err: any) {
+
+            console.log(err);
+
+            throw new ApiError(err.code, err.message);
+
+        }
+
+    });
 
 
+
+    socket.on("consumer-resume", ({ consumerId }: any) => {
+
+        const consumer = consumers.get(consumerId);
+
+        consumer.resume();
+
+    });
+
+
+
+
+
+
+    socket.on("end-meeting", ({ email, roomId }: { email: string, roomId: string }) => {
+
+        try {
+
+            const userData = activeUsers.get(email);
+
+            const { admin } = getRoomRouterAndMembers(socket.id);
+
+            if (admin === email) {
+
+                endMeeting(roomId, email);
+
+            }
 
         } catch (err: any) {
 
@@ -496,16 +539,11 @@ io.on("connection", (socket: Socket) => {
 
         }
 
-    })
-
-
-    socket.emit("consumer-resume", ({ consumerId }: any) => {
-
-        const consumer = consumers.get(consumerId);
-
-        consumer.resume();
-
     });
+
+
+
+
 
 
     socket.on("disconnect", () => {
@@ -532,10 +570,7 @@ io.on("connection", (socket: Socket) => {
 
 
 
-
-
 const addActiveUser = (socket: Socket, email: string) => {
-
 
     try {
 
@@ -543,19 +578,14 @@ const addActiveUser = (socket: Socket, email: string) => {
 
             const previousSocketObj: any = emailToSocket.get(email)
 
-            const activeUserObj = activeUsers.get(email);
+            updateActiveUserPropState(email, "email", email);
+            updateActiveUserPropState(email, "socket", socket);
 
             previousSocketObj.socket = socket
-
-            activeUserObj.email = email
-            activeUserObj.socket = socket
-
 
             socketToEmail.set(socket.id, socketToEmail.get(previousSocketObj.socket.id));
 
             emailToSocket.set(email, previousSocketObj);
-
-            activeUsers.set(email, activeUserObj);
 
             socketToEmail.delete(previousSocketObj?.socket?.id);
 
@@ -618,7 +648,7 @@ const createWebRtcTransport = async (router: mediasoupTypes.Router, callback: Fu
 
                 protocol: "udp",
                 ip: "0.0.0.0",
-                announcedAddress: "192.168.1.6"
+                announcedAddress: "192.168.1.2"
 
             }],
 
@@ -642,8 +672,6 @@ const createWebRtcTransport = async (router: mediasoupTypes.Router, callback: Fu
             }
 
         });
-
-
 
         return transport
 
@@ -672,9 +700,9 @@ const getRoomRouterAndMembers = (socketId: string) => {
 
         if (!roomName) throw new ApiError(401, "the room your trying to join either closed or do not exist, cannot proceed further");
 
-        const { router, roomMembers } = activeRooms.get(roomName);
+        const { router, roomMembers, admin } = activeRooms.get(roomName);
 
-        return { router, roomMembers }
+        return { router, roomMembers, admin }
 
     } catch (err: any) {
 
@@ -723,13 +751,10 @@ const addProducerTransport = (transport: mediasoupTypes.WebRtcTransport, socketI
 
     transports.set(transport.id, transport);
 
-    const userEmail = socketToEmail.get(socketId).email
+    const userEmail = socketToEmail.get(socketId).email;
 
-    const userData = activeUsers.get(userEmail);
+    updateActiveUserPropState(userEmail, "producerTransport", transport)
 
-    userData.producerTransport = transport;
-
-    activeUsers.set(userEmail, userData);
 
 }
 
@@ -744,12 +769,7 @@ const addConsumerTransport = (transport: mediasoupTypes.WebRtcTransport, socketI
 
     const userEmail = socketToEmail.get(socketId).email;
 
-    const userData = activeUsers.get(userEmail);
-
-    userData.consumerTransport = transport;
-
-    activeUsers.set(userEmail, userData);
-
+    updateActiveUserPropState(userEmail, "consumerTransport", transport)
 
 }
 
@@ -759,13 +779,9 @@ const addProducer = (producer: mediasoupTypes.Producer, socketId: string) => {
 
     try {
 
-
         const userEmail = socketToEmail.get(socketId).email;
-        const userData = activeUsers.get(userEmail);
 
-        userData.producerId = producer.id;
-
-        activeUsers.set(userEmail, userData);
+        updateActiveUserPropState(userEmail, "producerId", producer.id);
 
         producers.set(producer.id, producer);
 
@@ -786,16 +802,11 @@ const addConsumer = (consumer: mediasoupTypes.Consumer, socketId: string) => {
 
     try {
 
-
         const userEmail = socketToEmail.get(socketId).email;
-        const userData = activeUsers.get(userEmail);
 
-        userData.consumerId = consumer.id;
-
-        activeUsers.set(userEmail, userData);
+        updateActiveUserPropState(userEmail, "consumerId", consumer.id);
 
         consumers.set(consumer.id, consumer);
-
 
     } catch (err: any) {
 
@@ -835,6 +846,126 @@ const informConsumers = (producer: mediasoupTypes.Producer, socketId: string) =>
 
 
 }
+
+
+
+
+
+
+
+const closeProducer = (producerId: string) => {
+
+    try {
+
+        const producer = producers.get(producerId);
+
+        /// this will close the producer entirely
+        /// means no more transmission of tracks
+
+        producer.close()
+
+
+    } catch (err: any) {
+
+        console.log(err);
+
+    }
+
+}
+
+
+
+
+
+
+/// end meeting related functions
+
+
+
+
+
+
+
+
+
+
+
+
+const informAllThePeers = (email: string, message: string) => {
+
+    try {
+
+        const userSocket = activeUsers.get(email).socket;
+
+        console.log(userSocket, 'sokcet')
+
+        userSocket.emit("group-message", { message })
+
+    } catch (err: any) {
+
+        console.log(err)
+
+    }
+
+}
+
+
+
+
+
+
+
+const endMeeting = async (roomId: string, email: string) => {
+
+    try {
+
+        if (!activeRooms.get(roomId)) throw new ApiError(404, "already ended the meeting");
+
+
+
+        const { roomMembers } = activeRooms.get(roomId);
+
+
+        const peersToInform = roomMembers.filter((member: { email: string }) => member.email !== email);
+
+        peersToInform.forEach((member: any) => {
+
+            informAllThePeers(member.email, "meeting has been ended");
+
+        });
+
+        roomMembers.forEach((member: any) => {
+
+            const producerId: string = activeUsers.get(member.email).producerId;
+
+            const producerIdToClose = producers.get(producerId).id;
+
+            closeProducer(producerIdToClose);
+
+        });
+
+        const roomData = activeRooms.get(roomId);
+
+        roomData.roomStatus = "CLOSED"
+
+        activeRooms.delete(roomId);
+
+        await MultipartyRoom.findOneAndUpdate({ roomId }, {
+            $set: {
+                roomStatus: "CLOSED"
+            }
+        });
+
+    } catch (err: any) {
+
+        console.log(err);
+
+        throw new ApiError(err.code, err.message);
+
+    }
+
+}
+
 
 
 

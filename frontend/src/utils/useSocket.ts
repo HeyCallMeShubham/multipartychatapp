@@ -1,14 +1,26 @@
 
 import { useMemo } from "react";
+import { useSelector } from "react-redux";
 import * as io from "socket.io-client"
 
 const useSocket = () => {
 
+    const currentLoggedInUser = useSelector((state: any) => state?.currentUser?.currentLoggedInUser);
+
     try {
 
-        const useSocketIo: io.Socket = io.connect("http://localhost:8700");
 
-        return useSocketIo
+        const useSocketIo: io.Socket = io.connect("https://localhost:8700", {
+
+            auth:{
+
+                email:currentLoggedInUser.email
+
+            }
+          
+        });
+
+        return useSocketIo;
 
     } catch (err) {
 

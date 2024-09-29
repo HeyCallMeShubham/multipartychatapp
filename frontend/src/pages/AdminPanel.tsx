@@ -43,6 +43,8 @@ const AdminPanel = () => {
 
   const mediaSoupStateProps = useSelector((state: any) => state.mediaSoupStates)
 
+  const currentLoggedInUser = useSelector((state: any) => state?.currentUser?.currentLoggedInUser);
+
   const localStream: any = useRef(null);
 
   const [isMicOn, setIsMicOn] = useState(false);
@@ -63,6 +65,8 @@ const AdminPanel = () => {
 
     socketIo.on("new-producer", ({ producerId }: { producerId: string }) => {
 
+      console.log(producerId, 'newPcoducers')
+
       dispatch(setMediaSoupState({ prop: "producerIds", value: producerId }));
 
     });
@@ -78,6 +82,24 @@ const AdminPanel = () => {
     }
 
   }, [socketIo]);
+
+
+
+
+
+  useEffect(() => {
+
+    socketIo.on("group-message", ({ message }: any) => {
+
+      console.log(message, 'messae')
+
+      alert(message);
+
+    });
+
+  }, [socketIo]);
+
+
 
 
 
@@ -248,7 +270,7 @@ const AdminPanel = () => {
   }, [mediaSoupStateProps.producerTransport, mediaSoupStateProps.audioParams, mediaSoupStateProps.videoParams]);
 
 
-
+  
 
 
   const connectSendTransport = useCallback(async () => {
@@ -383,7 +405,7 @@ const AdminPanel = () => {
     }
   }, [mediaSoupStateProps.device])
 
-    
+
 
 
 
@@ -459,8 +481,8 @@ const AdminPanel = () => {
       </div>
 
 
-      <BottomMultipartyOptionsDesktop />
-      <BottomMultipartyOptionsMobile />
+      <BottomMultipartyOptionsDesktop socket={socketIo} userEmail={currentLoggedInUser.email} />
+      <BottomMultipartyOptionsMobile socket={socketIo} userEmail={currentLoggedInUser.email} />
 
     </div >
   )
