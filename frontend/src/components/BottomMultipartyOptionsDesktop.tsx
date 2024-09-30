@@ -12,6 +12,7 @@ import { FaVideoSlash } from "react-icons/fa6";
 import "../styles/components/bottomMultipartyOptionsDesktop.css"
 import NestedMoreOptions from './NestedMoreOptions';
 import { Navigate, Params, useNavigate, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 
 
@@ -22,6 +23,12 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
     const [isProducingMedia, setIsProducingMedia] = useState(false);
 
     const [isNestedOptionOpen, setIsNestedOptionOpen] = useState(false);
+
+    const mediaSoupStateProps = useSelector((state: any) => state.mediaSoupStates);
+
+
+
+
 
     const { roomId }: Readonly<Params<string>> = useParams();
 
@@ -35,9 +42,17 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
             if (isMicOn) {
 
+                const audioTrack = mediaSoupStateProps?.audioParams.track
+
+                 audioTrack.enabled = false
+
                 setIsMicOn(false);
 
             } else {
+
+                const audioTrack = mediaSoupStateProps?.audioParams.track
+
+                 audioTrack.enabled = true
 
                 setIsMicOn(true);
 
@@ -151,10 +166,11 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
         <div className='bottomOptionsMainContianer hideWhenInMobile'>
 
-            {isMicOn ?
-
-                <span className='iconContainer ' data-after-content="Mute" onClick={toggleMic}><IoMic className='icon muteIcon ' /></span>
-                : <span className='iconContainer ' onClick={toggleMic} data-after-content="Mute"> <IoMicOff className='icon muteIcon ' /></span>}
+            {isMicOn 
+                 ?
+                 <span className='iconContainer ' onClick={toggleMic} data-after-content="Mute"> <IoMicOff className='icon muteIcon ' /></span>
+                 :
+                 <span className='iconContainer ' data-after-content="Mute" onClick={toggleMic}><IoMic className='icon muteIcon ' /></span>}
 
             {isProducingMedia ?
                 <span className='iconContainer' data-after-content="Stop Video"><FaVideo className='icon  stopVideo' onClick={pauseUnPauseTrack} /></span> :

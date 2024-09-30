@@ -276,6 +276,16 @@ io.on("connection", (socket) => {
             throw new ApiError_1.default(err.code, err.message);
         }
     }));
+    socket.on("producerPause", (_a) => __awaiter(void 0, [_a], void 0, function* ({ email }) {
+        const userData = activeUsers.get(email);
+        const producer = producers.get(userData.producerId);
+        producer.pause();
+    }));
+    socket.on("producerResume", (_a) => __awaiter(void 0, [_a], void 0, function* ({ email }) {
+        const userData = activeUsers.get(email);
+        const producer = producers.get(userData.producerId);
+        producer.resume();
+    }));
     socket.on("consumer-resume", ({ consumerId }) => {
         const consumer = consumers.get(consumerId);
         consumer.resume();
@@ -345,7 +355,7 @@ const createWebRtcTransport = (router, callback) => __awaiter(void 0, void 0, vo
             listenInfos: [{
                     protocol: "udp",
                     ip: "0.0.0.0",
-                    announcedAddress: "192.168.1.2"
+                    announcedAddress: "192.168.1.4"
                 }],
             enableUdp: true,
             enableTcp: true,
@@ -371,18 +381,10 @@ const createWebRtcTransport = (router, callback) => __awaiter(void 0, void 0, vo
 const getRoomRouterAndMembers = (socketId) => {
     // this function will get the router of the room that user have joined and return it
     var _a, _b;
-    try {
-        const userEmail = (_a = socketToEmail.get(socketId)) === null || _a === void 0 ? void 0 : _a.email;
-        const roomName = (_b = activeUsers.get(userEmail)) === null || _b === void 0 ? void 0 : _b.currentJoinedRoomId;
-        if (!roomName)
-            throw new ApiError_1.default(401, "the room your trying to join either closed or do not exist, cannot proceed further");
-        const { router, roomMembers, admin } = activeRooms.get(roomName);
-        return { router, roomMembers, admin };
-    }
-    catch (err) {
-        console.log(err);
-        throw new ApiError_1.default(err.code, err.message);
-    }
+    const userEmail = (_a = socketToEmail.get(socketId)) === null || _a === void 0 ? void 0 : _a.email;
+    const roomName = (_b = activeUsers.get(userEmail)) === null || _b === void 0 ? void 0 : _b.currentJoinedRoomId;
+    const { router, roomMembers, admin } = activeRooms.get(roomName);
+    return { router, roomMembers, admin };
 };
 const updateActiveUserPropState = (email, prop, value) => {
     try {
@@ -392,7 +394,7 @@ const updateActiveUserPropState = (email, prop, value) => {
     }
     catch (err) {
         console.log(err);
-        throw new ApiError_1.default(err.code, err.message);
+        /// throw new ApiError(err.code, err.message);
     }
 };
 const addProducerTransport = (transport, socketId) => {

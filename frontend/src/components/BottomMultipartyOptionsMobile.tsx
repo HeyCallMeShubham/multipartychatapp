@@ -10,6 +10,8 @@ import { FaMobileAlt } from "react-icons/fa";
 import { FaVideo } from "react-icons/fa";
 import { FaVideoSlash } from "react-icons/fa6";
 import "../styles/components/bottomMultipartiOptionsMobile.css";
+import { useSelector } from 'react-redux';
+import NestedMoreOptions from './NestedMoreOptions';
 
 const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
 
@@ -20,6 +22,12 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
 
     const [isProducingMedia, setIsProducingMedia] = useState(false);
 
+    const mediaSoupStateProps = useSelector((state: any) => state.mediaSoupStates);
+
+
+
+
+
 
     const toggleMic = () => {
 
@@ -27,9 +35,17 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
 
             if (isMicOn) {
 
+                const audioTrack = mediaSoupStateProps?.audioParams.track
+
+                audioTrack.enabled = false
+
                 setIsMicOn(false);
 
             } else {
+
+                const audioTrack = mediaSoupStateProps?.audioParams.track
+
+                audioTrack.enabled = true
 
                 setIsMicOn(true);
 
@@ -42,6 +58,8 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
         }
 
     }
+
+
 
 
 
@@ -120,6 +138,10 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
 
 
             <span className='iconContainer' data-after-content="Share Display" ><FaDisplay className='icon shareDesktopDisplayIcon' /> </span>
+
+
+            {isNestedOptionOpen ? <NestedMoreOptions /> : ""}
+
 
             <span className='iconContainer ' data-after-content="More"><BsThreeDots className='icon more' onClick={showNestedOption} /> </span>
 

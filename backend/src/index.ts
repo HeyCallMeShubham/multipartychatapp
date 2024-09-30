@@ -710,7 +710,7 @@ const createWebRtcTransport = async (router: mediasoupTypes.Router, callback: Fu
 
                 protocol: "udp",
                 ip: "0.0.0.0",
-                announcedAddress: "192.168.1.4"
+                announcedAddress: "192.168.1.2"
 
             }],
 
