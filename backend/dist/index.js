@@ -280,7 +280,9 @@ io.on("connection", (socket) => {
         const consumer = consumers.get(consumerId);
         consumer.resume();
     });
-    socket.on("leave-room", ({ roomId, email }) => leaveRoom);
+    socket.on("leave-room", ({ roomId, email }, callback) => {
+        leaveRoom(roomId, email, callback);
+    });
     socket.on("end-meeting", ({ email, roomId }) => {
         try {
             const userData = activeUsers.get(email);
@@ -296,6 +298,8 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log(socket.id, 'disconnect');
         const disconnectedUserEmail = socketToEmail.get(socket === null || socket === void 0 ? void 0 : socket.id);
+        const userData = activeUsers.get(disconnectedUserEmail);
+        leaveRoom(userData === null || userData === void 0 ? void 0 : userData.currentJoinedRoomId, disconnectedUserEmail);
         emailToSocket.delete(disconnectedUserEmail === null || disconnectedUserEmail === void 0 ? void 0 : disconnectedUserEmail.email);
         activeUsers.delete(disconnectedUserEmail === null || disconnectedUserEmail === void 0 ? void 0 : disconnectedUserEmail.email);
         socketToEmail.delete(socket.id);
@@ -485,9 +489,19 @@ const endMeeting = (roomId, email) => __awaiter(void 0, void 0, void 0, function
         throw new ApiError_1.default(err.code, err.message);
     }
 });
-const leaveRoom = (roomId, email) => {
+const leaveRoom = (roomId, email, callback) => {
     try {
-        console.log(roomId, email, 'fggg');
+        const roomData = activeRooms.get(roomId);
+        roomData.roomMembers = roomData.roomMembers.filter((member) => member.email !== email);
+        activeRooms.set(roomId, roomData);
+        const data = roomData.roomMembers.find((member) => member.email === email);
+        if (!data) {
+            callback({ data: true });
+            const userData = activeUsers.get(email);
+            userData.currentJoinedRoomId = "";
+            activeUsers.set(email, userData);
+        }
+        ;
     }
     catch (err) {
         console.log(err);

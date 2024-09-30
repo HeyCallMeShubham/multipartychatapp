@@ -19,37 +19,13 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
     const [isMicOn, setIsMicOn] = useState(false);
 
+    const [isProducingMedia, setIsProducingMedia] = useState(false);
+
     const [isNestedOptionOpen, setIsNestedOptionOpen] = useState(false);
 
     const { roomId }: Readonly<Params<string>> = useParams();
+
     const redirect = useNavigate();
-    const getMedia = async () => {
-
-        try {
-
-            const stream: any = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-
-
-
-
-        } catch (err) {
-
-            console.log(err);
-
-        }
-
-    }
-
-
-
-
-
-    useEffect(() => {
-
-        getMedia();
-
-    }, []);
-
 
 
 
@@ -101,7 +77,6 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
 
 
-
     const endMeeting = useCallback(() => {
 
         try {
@@ -115,9 +90,6 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
         }
 
     }, []);
-
-
-
 
 
 
@@ -141,6 +113,35 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
 
 
 
+    const pauseUnPauseTrack = () => {
+
+        try {
+
+            if (isProducingMedia) {
+
+                socket?.emit("producerPause", { email: userEmail });
+
+                setIsProducingMedia(false);
+
+            } else {
+
+                socket?.emit("producerResume", { email: userEmail });
+
+                setIsProducingMedia(true);
+
+            }
+
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    }
+
+
+
 
 
 
@@ -155,9 +156,9 @@ const BottomMultipartyOptionsDesktop = ({ socket, userEmail }: any) => {
                 <span className='iconContainer ' data-after-content="Mute" onClick={toggleMic}><IoMic className='icon muteIcon ' /></span>
                 : <span className='iconContainer ' onClick={toggleMic} data-after-content="Mute"> <IoMicOff className='icon muteIcon ' /></span>}
 
-            {false ?
-                <span className='iconContainer' data-after-content="Stop Video"><FaVideo className='icon  stopVideo' /></span> :
-                <span className='iconContainer' data-after-content="Stop Video" ><FaVideoSlash className='icon stopVideo ' /></span>}
+            {isProducingMedia ?
+                <span className='iconContainer' data-after-content="Stop Video"><FaVideo className='icon  stopVideo' onClick={pauseUnPauseTrack} /></span> :
+                <span className='iconContainer' data-after-content="Stop Video" ><FaVideoSlash className='icon stopVideo ' onClick={pauseUnPauseTrack} /></span>}
 
 
             <span className='iconContainer' data-after-content="Share Display" ><FaDisplay className='icon shareDesktopDisplayIcon' /> </span>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { IoMic } from "react-icons/io5";
 import { IoMicOff } from "react-icons/io5";
 import { IoIosReverseCamera } from "react-icons/io";
@@ -18,6 +18,7 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
 
     const [isNestedOptionOpen, setIsNestedOptionOpen] = useState(false);
 
+    const [isProducingMedia, setIsProducingMedia] = useState(false);
 
 
     const toggleMic = () => {
@@ -68,6 +69,35 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
 
 
 
+    const pauseUnPauseTrack = () => {
+
+        try {
+
+            if (isProducingMedia) {
+
+                socket?.emit("producerPause", { email: userEmail });
+
+                setIsProducingMedia(false);
+
+            } else {
+
+                socket?.emit("producerResume", { email: userEmail });
+
+                setIsProducingMedia(true);
+
+            }
+
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    }
+
+
+
 
 
 
@@ -82,11 +112,11 @@ const BottomMultipartyOptionsMobile = ({ socket, userEmail }: any) => {
                 <span className='iconContainer ' onClick={toggleMic} data-after-content="Mute"> <IoMicOff className='icon muteIcon ' /></span>}
 
 
-            {false
+            {isProducingMedia
                 ?
-                <span className='iconContainer' data-after-content="Stop Video"><FaVideo className='icon  stopVideo' /></span>
+                <span className='iconContainer' data-after-content="Stop Video"><FaVideo className='icon  stopVideo' onClick={pauseUnPauseTrack} /></span>
                 :
-                <span className='iconContainer' data-after-content="Play Video" ><FaVideoSlash className='icon stopVideo ' /></span>}
+                <span className='iconContainer' data-after-content="Play Video" ><FaVideoSlash className='icon stopVideo ' onClick={pauseUnPauseTrack} /></span>}
 
 
             <span className='iconContainer' data-after-content="Share Display" ><FaDisplay className='icon shareDesktopDisplayIcon' /> </span>

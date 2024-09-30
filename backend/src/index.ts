@@ -374,6 +374,10 @@ io.on("connection", (socket: Socket) => {
 
 
 
+
+
+
+
     socket.on("transport-produce", async ({ serverSideProducerTransportId, parameters }: { serverSideProducerTransportId: string, parameters: any }, callback: Function) => {
 
         try {
@@ -400,6 +404,10 @@ io.on("connection", (socket: Socket) => {
     });
 
 
+
+
+
+
     socket.on("transport-recv-connect", async ({ serverSideConsumerTransportId, dtlsParameters }: { serverSideConsumerTransportId: string, dtlsParameters: mediasoupTypes.DtlsParameters }) => {
 
         try {
@@ -417,6 +425,8 @@ io.on("connection", (socket: Socket) => {
 
 
     });
+
+
 
 
 
@@ -445,6 +455,8 @@ io.on("connection", (socket: Socket) => {
         callback({ producerIds });
 
     });
+
+
 
 
 
@@ -503,13 +515,56 @@ io.on("connection", (socket: Socket) => {
 
 
 
+
+
+    socket.on("producerPause", async ({ email }) => {
+
+
+        const userData = activeUsers.get(email);
+
+        const producer = producers.get(userData.producerId);
+
+        producer.pause();
+
+ 
+        
+    });
+
+
+
+
+    socket.on("producerResume", async ({ email }) => {
+
+
+        const userData = activeUsers.get(email);
+        
+        const producer = producers.get(userData.producerId);
+        producer.resume();    
+
+    });
+
+
+
+
+
+
+
+
     socket.on("consumer-resume", ({ consumerId }: any) => {
 
         const consumer = consumers.get(consumerId);
 
+
         consumer.resume();
 
     });
+
+
+
+
+
+
+
 
 
 
@@ -655,7 +710,7 @@ const createWebRtcTransport = async (router: mediasoupTypes.Router, callback: Fu
 
                 protocol: "udp",
                 ip: "0.0.0.0",
-                announcedAddress: "192.168.1.2"
+                announcedAddress: "192.168.1.4"
 
             }],
 
@@ -698,26 +753,16 @@ const createWebRtcTransport = async (router: mediasoupTypes.Router, callback: Fu
 const getRoomRouterAndMembers = (socketId: string) => {
 
     // this function will get the router of the room that user have joined and return it
-
-    try {
-
+ 
         const userEmail = socketToEmail.get(socketId)?.email
 
         const roomName = activeUsers.get(userEmail)?.currentJoinedRoomId;
 
-        if (!roomName) throw new ApiError(401, "the room your trying to join either closed or do not exist, cannot proceed further");
-
+  
         const { router, roomMembers, admin } = activeRooms.get(roomName);
 
         return { router, roomMembers, admin }
-
-    } catch (err: any) {
-
-        console.log(err);
-
-        throw new ApiError(err.code, err.message);
-
-    }
+ 
 
 }
 
@@ -739,7 +784,7 @@ const updateActiveUserPropState = (email: string, prop: string, value: any) => {
 
         console.log(err);
 
-        throw new ApiError(err.code, err.message);
+        /// throw new ApiError(err.code, err.message);
 
 
 
@@ -806,6 +851,7 @@ const addProducer = (producer: mediasoupTypes.Producer, socketId: string) => {
 
 
 const addConsumer = (consumer: mediasoupTypes.Consumer, socketId: string) => {
+
 
     try {
 
@@ -885,16 +931,11 @@ const closeProducer = (producerId: string) => {
 
 
 
+
+
+
+
 /// end meeting related functions
-
-
-
-
-
-
-
-
-
 
 
 
@@ -915,9 +956,6 @@ const informAllThePeers = (email: string, message: string) => {
     }
 
 }
-
-
-
 
 
 
@@ -976,11 +1014,12 @@ const endMeeting = async (roomId: string, email: string) => {
 
 
 
+
 const leaveRoom = (roomId: string, email: string, callback?: Function | any) => {
 
     try {
 
-        const roomData:any = activeRooms.get(roomId);
+        const roomData: any = activeRooms.get(roomId);
 
         roomData.roomMembers = roomData.roomMembers.filter((member: any) => member.email !== email)
 

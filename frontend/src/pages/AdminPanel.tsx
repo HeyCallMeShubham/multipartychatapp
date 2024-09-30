@@ -390,7 +390,6 @@ const AdminPanel = () => {
 
         const { track }: any = consumer
 
-        console.log(track, 'tracks')
 
         socketIo.emit("consumer-resume", { consumerId: params.id });
 
